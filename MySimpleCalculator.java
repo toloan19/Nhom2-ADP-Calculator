@@ -1,14 +1,12 @@
-
 import java.awt.*;                      // Import AWT classes for GUI components
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
-import java.awt.event.*;                // Import classes for event handling (keyboard, mouse, etc.)
-import javax.swing.*;                   // Import Swing classes for building the GUI
-import javax.swing.border.EmptyBorder; // Import EmptyBorder to add empty space around components
+import java.awt.event.*;                // Import event handling classes
+import javax.swing.*;                   // Import Swing classes for GUI components
+import javax.swing.border.EmptyBorder; // Import EmptyBorder for layout spacing
+
 
 /**
- * SimpleCalculator simulates a basic calculator with a GUI. This code follows
- * clean code principles with clear variable and method names.
+ * SimpleCalculator simulates a basic calculator with a GUI.
+ * This code follows clean code principles with clear variable and method names.
  */
 public class MySimpleCalculator {
 
@@ -16,12 +14,11 @@ public class MySimpleCalculator {
     private JFrame mainFrame;                 // The main application window
     private JTextField displayField;          // Text field to show expressions and results
     private DefaultListModel<String> historyModel; // Model for storing calculation history
-    private JList<String> historyList;        // List to display the calculation history
-    private boolean calculationDone = false;  // Flag to indicate if a calculation was just performed
+    private boolean calculationDone = false;       // Flag to indicate if a calculation was just performed
+    private JList<String> historyList;             // List to display the calculation history
 
     /**
-     * Constructor: Initializes the calculator by setting up the GUI and key
-     * bindings.
+     * Constructor: Initializes the calculator by setting up the GUI and key bindings.
      */
     public MySimpleCalculator() {
         setupUI();          // Set up the user interface
@@ -29,12 +26,13 @@ public class MySimpleCalculator {
     }
 
     /**
-     * Sets up the user interface. Creates the main frame, display area, button
-     * panel, and history panel.
+     * Sets up the user interface.
+     * Creates the main frame, display area, button panel, and history panel.
      */
     private void setupUI() {
         // Create the main frame with a title and set it to exit when closed
         mainFrame = new JFrame("My Simple Calculator");
+        mainFrame.setJMenuBar(createMenuBar());
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.setSize(600, 600); // Set the window size
         mainFrame.setLayout(new BorderLayout(10, 10)); // Use BorderLayout with 10-pixel gaps
@@ -48,28 +46,18 @@ public class MySimpleCalculator {
         displayField.setForeground(Color.BLACK);          // Set text color to black
         // Set a compound border with a colored line and padding
         displayField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(180, 200, 220), 3),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+            BorderFactory.createLineBorder(new Color(180, 200, 220), 3),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
         JPanel displayPanel = new JPanel(new BorderLayout());
         displayPanel.add(displayField, BorderLayout.CENTER);
-        JButton copyButton = new JButton("Copy");
-        copyButton.setFont(new Font("Tahoma", Font.PLAIN, 14));
-        copyButton.setFocusPainted(false);
-        copyButton.addActionListener((ActionEvent e) -> {
-            String result = displayField.getText();
-            StringSelection selection = new StringSelection(result);
-            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-            clipboard.setContents(selection, null);
-        });
-        displayPanel.add(copyButton, BorderLayout.EAST);
 
         // --- Create the button panel ---
         // Use a GridLayout with 6 rows and 4 columns with 5-pixel gaps
         JPanel buttonPanel = new JPanel(new GridLayout(6, 4, 5, 5));
         // Array of button labels (numbers, operators, and special functions)
         String[] buttonLabels = {
-            "C", "(", ")", "B", // "C": clear, "B": backspace
+            "C", "(", ")", "B",   // "C": clear, "B": backspace
             "7", "8", "9", "/",
             "4", "5", "6", "*",
             "1", "2", "3", "-",
@@ -103,8 +91,8 @@ public class MySimpleCalculator {
     }
 
     /**
-     * Creates a JButton with the specified label. Sets the font, background
-     * color, and registers an action listener.
+     * Creates a JButton with the specified label.
+     * Sets the font, background color, and registers an action listener.
      *
      * @param label The text to display on the button
      * @return A configured JButton object
@@ -115,7 +103,7 @@ public class MySimpleCalculator {
         button.setFocusPainted(false);                 // Disable focus painting
         button.setPreferredSize(new Dimension(60, 60));
         button.setBackground(new Color(230, 230, 230));  // Set a light gray background
-        button.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180)));
+        button.setBorder(BorderFactory.createLineBorder(new Color(180,180,180)));
         if (label.equals("C") || label.equals("B")) {
             button.setBackground(new Color(255, 160, 122));
         } else {
@@ -131,9 +119,10 @@ public class MySimpleCalculator {
     }
 
     /**
-     * Handles button click events. For the "(-)" button, toggles the sign of
-     * the current value. Now, if the display is "0" or empty, pressing "(-)"
-     * will insert a "-" so that the user can type the negative number.
+     * Handles button click events.
+     * For the "(-)" button, toggles the sign of the current value.
+     * Now, if the display is "0" or empty, pressing "(-)" will insert a "-"
+     * so that the user can type the negative number.
      *
      * @param label The label of the button that was pressed
      */
@@ -237,9 +226,7 @@ public class MySimpleCalculator {
     private void performCalculation() {
         try {
             String expression = displayField.getText(); // Get the expression from the display
-            if (expression.isEmpty()) {
-                return;
-            }
+            if (expression.isEmpty()) return;
             double result = evaluateExpression(expression); // Evaluate the expression using the parser
             String resultStr = formatResult(result);          // Format the result for display
             historyModel.addElement(expression + " = " + resultStr); // Add the calculation to history
@@ -279,27 +266,24 @@ public class MySimpleCalculator {
     }
 
     /**
-     * Formats the result so that if the result is an integer, the decimal part
-     * is not shown.
+     * Formats the result so that if the result is an integer,
+     * the decimal part is not shown.
      *
      * @param value The value to format
      * @return A string representation of the result
      */
     private String formatResult(double value) {
-        if (value == (long) value) {
+        if (value == (long) value)
             return String.valueOf((long) value);
-        } else {
+        else
             return String.valueOf(value);
-        }
     }
 
     /**
-     * ExpressionParser uses recursive descent parsing to evaluate mathematical
-     * expressions. Supported operators: +, -, *, /, exponentiation (^), square
-     * root (√), and percentage (%).
+     * ExpressionParser uses recursive descent parsing to evaluate mathematical expressions.
+     * Supported operators: +, -, *, /, exponentiation (^), square root (√), and percentage (%).
      */
     private class ExpressionParser {
-
         private final String input; // The input expression
         private int pos = -1;       // Current position in the input string
         private int currentChar;    // Current character as an ASCII value
@@ -353,7 +337,8 @@ public class MySimpleCalculator {
         }
 
         /**
-         * Parses an expression. Expression = Term { ('+' | '-') Term }
+         * Parses an expression.
+         * Expression = Term { ('+' | '-') Term }
          *
          * @return The evaluated value of the expression
          */
@@ -371,7 +356,8 @@ public class MySimpleCalculator {
         }
 
         /**
-         * Parses a term. Term = Factor { ('*' | '/') Factor }
+         * Parses a term.
+         * Term = Factor { ('*' | '/') Factor }
          *
          * @return The evaluated value of the term
          */
@@ -393,19 +379,16 @@ public class MySimpleCalculator {
         }
 
         /**
-         * Parses a factor. Factor = (unary operators) { '^' Factor } Supports
-         * numbers, parentheses, square root (√), and percentage (%).
+         * Parses a factor.
+         * Factor = (unary operators) { '^' Factor }
+         * Supports numbers, parentheses, square root (√), and percentage (%).
          *
          * @return The evaluated value of the factor
          */
         private double parseFactor() {
             // Handle unary plus and minus
-            if (eat('+')) {
-                return parseFactor();
-            }
-            if (eat('-')) {
-                return -parseFactor();
-            }
+            if (eat('+')) return parseFactor();
+            if (eat('-')) return -parseFactor();
 
             double result;
             int startPos = pos; // Remember start position for numbers
@@ -424,13 +407,15 @@ public class MySimpleCalculator {
                 if (eat('%')) {
                     result /= 100.0;
                 }
-            } // Handle parentheses
+            }
+            // Handle parentheses
             else if (eat('(')) {
                 result = parseExpression();
                 if (!eat(')')) {
                     throw new RuntimeException("Missing ')'");
                 }
-            } // Handle numbers
+            }
+            // Handle numbers
             else if ((currentChar >= '0' && currentChar <= '9') || currentChar == '.') {
                 while ((currentChar >= '0' && currentChar <= '9') || currentChar == '.') {
                     nextChar();
@@ -451,6 +436,111 @@ public class MySimpleCalculator {
             return result;
         }
     }
+    
+    private JMenuBar createMenuBar() {
+    JMenuBar menuBar = new JMenuBar();
+
+    JMenu themeMenu = new JMenu("Giao diện");
+
+    JMenuItem lightModeItem = new JMenuItem("Chế độ Sáng");
+    JMenuItem darkModeItem = new JMenuItem("Chế độ Tối");
+    JMenuItem fontItem = new JMenuItem("Chọn Phông Chữ");
+    JMenuItem bgColorItem = new JMenuItem("Màu nền");
+    JMenuItem fgColorItem = new JMenuItem("Màu chữ");
+
+    lightModeItem.addActionListener(e -> setThemeMode("LIGHT"));
+    darkModeItem.addActionListener(e -> setThemeMode("DARK"));
+
+    fontItem.addActionListener(e -> chooseFont());
+    bgColorItem.addActionListener(e -> chooseBackgroundColor());
+    fgColorItem.addActionListener(e -> chooseForegroundColor());
+
+    themeMenu.add(lightModeItem);
+    themeMenu.add(darkModeItem);
+    themeMenu.addSeparator();
+    themeMenu.add(fontItem);
+    themeMenu.add(bgColorItem);
+    themeMenu.add(fgColorItem);
+
+    menuBar.add(themeMenu);
+
+    return menuBar;
+}
+
+private void setThemeMode(String mode) {
+    Color bgColor, fgColor, btnColor;
+
+    if (mode.equals("DARK")) {
+        bgColor = new Color(40, 40, 40);
+        fgColor = Color.WHITE;
+        btnColor = new Color(70, 70, 70);
+    } else {
+        bgColor = Color.WHITE;
+        fgColor = Color.BLACK;
+        btnColor = new Color(230, 230, 230);
+    }
+
+    displayField.setBackground(bgColor);
+    displayField.setForeground(fgColor);
+    historyList.setBackground(bgColor);
+    historyList.setForeground(fgColor);
+
+    Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents(); // buttonPanel
+    for (Component c : components) {
+        if (c instanceof JButton) {
+            JButton btn = (JButton) c;
+            btn.setBackground(btnColor);
+            btn.setForeground(fgColor);
+        }
+    }
+
+    mainFrame.getContentPane().setBackground(bgColor);
+}
+private void chooseFont() {
+    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    String[] fonts = ge.getAvailableFontFamilyNames();
+
+    String selectedFontName = (String) JOptionPane.showInputDialog(
+        mainFrame,
+        "Chọn Phông Chữ:",
+        "Chọn Phông Chữ",
+        JOptionPane.PLAIN_MESSAGE,
+        null,
+        fonts,
+        displayField.getFont().getFamily()
+    );
+
+    if (selectedFontName != null) {
+        Font selectedFont = new Font(selectedFontName, Font.PLAIN, 16);
+        displayField.setFont(selectedFont);
+        historyList.setFont(selectedFont.deriveFont(14f));
+
+        Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents();
+        for (Component c : components) {
+            if (c instanceof JButton) {
+                ((JButton) c).setFont(selectedFont.deriveFont(16f));
+            }
+        }
+    }
+}
+private void chooseBackgroundColor() {
+    Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Nền", displayField.getBackground());
+    if (color != null) {
+        displayField.setBackground(color);
+        historyList.setBackground(color);
+        mainFrame.getContentPane().setBackground(color);
+    }
+}
+
+private void chooseForegroundColor() {
+    Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Chữ", displayField.getForeground());
+    if (color != null) {
+        displayField.setForeground(color);
+        historyList.setForeground(color);
+    }
+}
+
+    
 
     /**
      * The main method to start the application.
