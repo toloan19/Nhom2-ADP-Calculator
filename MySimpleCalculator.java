@@ -435,9 +435,11 @@ public class MySimpleCalculator {
                 } else {
                     result = parseFactor();
                 }
+                // Calculate the square root
+                // Check for negative square root
                 if (result < 0) {
                     throw new ArithmeticException("Square root of a negative number");
-                }                // Calculate the square root
+                }
                 result = Math.sqrt(result);
                 if (eat('%')) {
                     result /= 100.0;
