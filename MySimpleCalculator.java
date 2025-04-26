@@ -1,5 +1,7 @@
 
 import java.awt.*;                      // Import AWT classes for GUI components
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;                // Import classes for event handling (keyboard, mouse, etc.)
 import javax.swing.*;                   // Import Swing classes for building the GUI
 import javax.swing.border.EmptyBorder; // Import EmptyBorder to add empty space around components
@@ -45,6 +47,18 @@ public class MySimpleCalculator {
 
         JPanel displayPanel = new JPanel(new BorderLayout());
         displayPanel.add(displayField, BorderLayout.CENTER);
+        
+        //Bo sung chuc nang copy vao Clipboard
+        JButton copyButton = new JButton("Copy");
+        copyButton.setFont(new Font("Tahoma", Font.PLAIN, 14));
+        copyButton.setFocusPainted(false);
+        copyButton.addActionListener((ActionEvent e) -> {
+            String result = displayField.getText();
+            StringSelection selection = new StringSelection(result);
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(selection, null);
+        });
+        displayPanel.add(copyButton, BorderLayout.EAST);
 
         JPanel buttonPanel = new JPanel(new GridLayout(7, 4, 5, 5));
         String[] buttonLabels = {
