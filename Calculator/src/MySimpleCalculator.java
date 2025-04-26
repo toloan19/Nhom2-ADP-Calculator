@@ -1,8 +1,7 @@
-
-import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.KeyEvent;
 
 public class MySimpleCalculator {
 
@@ -11,6 +10,7 @@ public class MySimpleCalculator {
     private DefaultListModel<String> historyModel;
     private JList<String> historyList;
     private boolean calculationDone = false;
+    private boolean isDegreeMode = true;
 
     public MySimpleCalculator() {
         initUI();
@@ -29,7 +29,7 @@ public class MySimpleCalculator {
         displayField.setFont(new Font("Arial", Font.BOLD, 32));
         displayField.setHorizontalAlignment(JTextField.RIGHT);
         displayField.setEditable(true);
-        displayField.setCaretColor(Color.BLACK); 
+        displayField.setCaretColor(Color.BLACK);
         displayField.setFocusable(true);
         displayField.setBackground(new Color(225, 250, 255));
         displayField.setForeground(Color.BLACK);
@@ -42,15 +42,15 @@ public class MySimpleCalculator {
         displayPanel.add(displayField, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new GridLayout(7, 5, 5, 5));
-     
+
         String[] buttonLabels = {
-        	"C", "CE", "B","(", ")",
-        	"7", "8", "9","+","-",  
-        	"4", "5", "6", "*", "/", 
-        	"1", "2", "3", ".", "(-)",
-        	"0", "√", "%", "x^y","n!",
-        	"sin", "cos", "tan", "cot", 
-        	"ln", "log", "Deg↔Rad",	"→", "←", "=",
+                "C", "CE", "B", "(", ")",
+                "7", "8", "9", "+", "-",
+                "4", "5", "6", "*", "/",
+                "1", "2", "3", ".", "(-)",
+                "0", "√", "%", "x^y", "n!",
+                "sin", "cos", "tan", "cot",
+                "ln", "log", "Deg↔Rad", "→", "←", "=",
         };
 
         for (String label : buttonLabels) {
@@ -108,32 +108,19 @@ public class MySimpleCalculator {
         }
 
         switch (label) {
-            case "C" ->
-                displayField.setText("0");
-            case "CE" ->
-                clearCurrentEntry();
-            case "←" ->
-                moveCaretLeft();
-            case "→" ->
-                moveCaretRight();
-            case "B" ->
-                deleteLastChar();
-            case "=" ->
-                performCalculation();
-            case "(-)" ->
-                toggleSign();
-            case "√" ->
-                appendToDisplay("√");
-            case "x^y" ->
-                appendToDisplay("^");
-            case "sin", "cos", "tan", "cot", "ln", "log" -> 
-            	appendToDisplay(label + "(");
-            case "n!" -> 
-            	appendToDisplay("!");
-            case "Deg↔Rad" -> 
-            	toggleAngleMode();
-            default ->
-                appendToDisplay(label);
+            case "C" -> displayField.setText("0");
+            case "CE" -> clearCurrentEntry();
+            case "←" -> moveCaretLeft();
+            case "→" -> moveCaretRight();
+            case "B" -> deleteLastChar();
+            case "=" -> performCalculation();
+            case "(-)" -> toggleSign();
+            case "√" -> appendToDisplay("√");
+            case "x^y" -> appendToDisplay("^");
+            case "sin", "cos", "tan", "cot", "ln", "log" -> appendToDisplay(label + "(");
+            case "n!" -> appendToDisplay("!");
+            case "Deg↔Rad" -> toggleAngleMode();
+            default -> appendToDisplay(label);
         }
     }
 
@@ -220,7 +207,9 @@ public class MySimpleCalculator {
             if (expression.isEmpty()) {
                 return;
             }
+            validateExpression(expression);
             double result = evaluateExpression(expression);
+            checkNumberLimits(result);
             String resultStr = formatResult(result);
             historyModel.addElement(expression + " = " + resultStr);
             displayField.setText(resultStr);
@@ -228,8 +217,10 @@ public class MySimpleCalculator {
             calculationDone = true;
         } catch (ArithmeticException ex) {
             JOptionPane.showMessageDialog(mainFrame, "Math error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(mainFrame, "Invalid number format: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } catch (RuntimeException ex) {
-            JOptionPane.showMessageDialog(mainFrame, "Invalid expression!", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(mainFrame, "Expression error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -277,6 +268,7 @@ public class MySimpleCalculator {
         private final String input;
         private int pos = -1;
         private int currentChar;
+
 
         public ExpressionParser(String input) {
             this.input = input;
@@ -365,19 +357,53 @@ public class MySimpleCalculator {
                 }
 
                 switch (func) {
-                    case "sin" -> result = Math.sin(arg);
-                    case "cos" -> result = Math.cos(arg);
-                    case "tan" -> result = Math.tan(arg);
-                    case "cot" -> result = 1.0 / Math.tan(arg);
-                    case "log" -> result = Math.log10(arg);
-                    case "ln" -> result = Math.log(arg);
+                    case "sin" -> {
+                        result = Math.sin(arg);
+                        checkNumberLimits(result);
+                    }
+                    case "cos" -> {
+                        result = Math.cos(arg);
+                        checkNumberLimits(result);
+                    }
+                    case "tan" -> {
+                        if (Math.abs(Math.cos(arg)) < 1e-10) {
+                            throw new ArithmeticException("Unknown value (tan)");
+                        }
+                        result = Math.tan(arg);
+                        checkNumberLimits(result);
+                    }
+                    case "cot" -> {
+                        if (Math.abs(Math.sin(arg)) < 1e-10) {
+                            throw new ArithmeticException("Unknown value (cot)");
+                        }
+                        result = 1.0 / Math.tan(arg);
+                        checkNumberLimits(result);
+                    }
+                    case "log" -> {
+                        if (arg <= 0) {
+                            throw new ArithmeticException("Invalid logarithm");
+                        }
+                        result = Math.log10(arg);
+                        checkNumberLimits(result);
+                    }
+                    case "ln" -> {
+                        if (arg <= 0) {
+                            throw new ArithmeticException("Invalid natural logarithm");
+                        }
+                        result = Math.log(arg);
+                        checkNumberLimits(result);
+                    }
                     default -> throw new RuntimeException("Unknown function: " + func);
                 }
                 return result;
             }
-            
+
             if (eat('√')) {
                 result = eat('(') ? parseExpression() : parseFactor();
+                if (result < 0) {
+                    throw new RuntimeException("Square root of a negative number is undefined");
+                }
+                result = Math.sqrt(result);
                 if (!eat(')')) {
                     throw new RuntimeException("Missing ')'");
                 }
@@ -403,11 +429,19 @@ public class MySimpleCalculator {
             }
 
             if (eat('^')) {
-                result = Math.pow(result, parseFactor());
+                double exponent = parseFactor();
+                if (result == 0 && exponent == 0) {
+                    throw new ArithmeticException("Indeterminate form: 0^0");
+                }
+                result = Math.pow(result, exponent);
+                checkNumberLimits(result);
             }
             if (eat('!')) {
-                if (result < 0 || result != Math.floor(result)) throw new RuntimeException("Giai thừa không hợp lệ");
+                if (result < 0 || result != Math.floor(result)) {
+                    throw new ArithmeticException("Factorial is only defined for non-negative integers");
+                }
                 result = factorial((int) result);
+                checkNumberLimits(result); // Validate result
             }
             return result;
         }
@@ -416,6 +450,23 @@ public class MySimpleCalculator {
             double res = 1;
             for (int i = 2; i <= n; i++) res *= i;
             return res;
+        }
+    }
+
+    private void checkNumberLimits(double value) {
+        if (value > Double.MAX_VALUE) {
+            throw new ArithmeticException("Value exceeding the maximum limit of a real number");
+        }
+        if (value < -Double.MAX_VALUE) {
+            throw new ArithmeticException("Value exceeding the minimum limit of a real number");
+        }
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            throw new ArithmeticException("Invalid value (NaN or Infinity)");
+        }
+    }
+    private void validateExpression(String expression) {
+        if (expression.contains(" ")) {
+            throw new RuntimeException("Expression contains invalid spaces");
         }
     }
 
