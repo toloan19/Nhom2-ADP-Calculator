@@ -1,72 +1,69 @@
-
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.*;                      
+import java.awt.event.*;                
+import javax.swing.*;                  
 import javax.swing.border.EmptyBorder;
+
 
 public class MySimpleCalculator {
 
-    private JFrame mainFrame;
-    private JTextField displayField;
-    private DefaultListModel<String> historyModel;
-    private JList<String> historyList;
-    private boolean calculationDone = false;
+    // GUI component declarations
+    private JFrame mainFrame;                 
+    private JTextField displayField;         
+    private DefaultListModel<String> historyModel; 
+    private boolean calculationDone = false;      
+    private JList<String> historyList;           
 
+  
     public MySimpleCalculator() {
-        initUI();
-        setupKeyBindings();
+        setupUI();          // Set up the user interface
+        setupKeyBindings(); // Set up keyboard shortcuts
     }
 
-    private void initUI() {
-        // Step 1: Create Frame
+    private void setupUI() {
         mainFrame = new JFrame("My Simple Calculator");
+        mainFrame.setJMenuBar(createMenuBar());
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mainFrame.setSize(600, 600);
-        mainFrame.setLayout(new BorderLayout(10, 10));
+        mainFrame.setSize(600, 600); // Set the window size
+        mainFrame.setLayout(new BorderLayout(10, 10)); // Use BorderLayout with 10-pixel gaps
 
-        // Step 2: Create Components
-        displayField = new JTextField("0");
-        displayField.setFont(new Font("Arial", Font.BOLD, 32));
-        displayField.setHorizontalAlignment(JTextField.RIGHT);
-        displayField.setEditable(true);
-        displayField.setCaretColor(Color.BLACK); 
-        displayField.setFocusable(true);
-        displayField.setBackground(new Color(225, 250, 255));
-        displayField.setForeground(Color.BLACK);
+        // --- Create the display field ---
+        displayField = new JTextField("0");               // Initialize with "0"
+        displayField.setFont(new Font("Arial", Font.BOLD, 32)); // Set a large, bold font
+        displayField.setHorizontalAlignment(JTextField.RIGHT);  // Align text to the right
+        displayField.setEditable(false);                  // Make the display non-editable
+        displayField.setBackground(new Color(225, 250, 255)); // Set a light blue background
+        displayField.setForeground(Color.BLACK);          // Set text color to black
+        // Set a compound border with a colored line and padding
         displayField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(180, 200, 220), 3),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+            BorderFactory.createLineBorder(new Color(180, 200, 220), 3),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
-
         JPanel displayPanel = new JPanel(new BorderLayout());
         displayPanel.add(displayField, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(7, 5, 5, 5));
-     
+        // --- Create the button panel ---
+        // Use a GridLayout with 6 rows and 4 columns with 5-pixel gaps
+        JPanel buttonPanel = new JPanel(new GridLayout(6, 4, 5, 5));
+        // Array of button labels (numbers, operators, and special functions)
         String[] buttonLabels = {
-        	"C", "CE", "B","(", ")",
-        	"7", "8", "9","+","-",  
-        	"4", "5", "6", "*", "/", 
-        	"1", "2", "3", ".", "(-)",
-        	"0", "√", "%", "x^y","n!",
-        	"sin", "cos", "tan", "cot", 
-        	"ln", "log", "Deg↔Rad",	"→", "←", "=",
+            "C", "(", ")", "B",   // "C": clear, "B": backspace
+            "7", "8", "9", "/",
+            "4", "5", "6", "*",
+            "1", "2", "3", "-",
+            "0", ".", "=", "+",
+            "x^y", "√", "%", "(-)" // "x^y": exponentiation, "√": square root, "(-)": toggle sign
         };
-
+        // Loop through each label, create a button, and add it to the panel
         for (String label : buttonLabels) {
-            if (label.isEmpty()) {
-                buttonPanel.add(new JLabel());
-            } else {
-                buttonPanel.add(createButton(label));
-            }
+            buttonPanel.add(createButton(label));
         }
 
-        historyModel = new DefaultListModel<>();
-        historyList = new JList<>(historyModel);
+        // --- Create the history panel ---
+        historyModel = new DefaultListModel<>();          // Create a model for history
+        historyList = new JList<>(historyModel);            // Create a list to display the history
         historyList.setFont(new Font("Arial", Font.PLAIN, 14));
-        JScrollPane historyScrollPane = new JScrollPane(historyList);
-        historyScrollPane.setPreferredSize(new Dimension(200, 0));
-
+        JScrollPane historyScrollPane = new JScrollPane(historyList); // Put the list in a scroll pane
+        historyScrollPane.setPreferredSize(new Dimension(200, 0));    // Set preferred width
         JPanel historyPanel = new JPanel(new BorderLayout());
         historyPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         JLabel historyLabel = new JLabel("Calculation History");
@@ -74,220 +71,236 @@ public class MySimpleCalculator {
         historyPanel.add(historyLabel, BorderLayout.NORTH);
         historyPanel.add(historyScrollPane, BorderLayout.CENTER);
 
-        // Step 3: Add to frame
+        // --- Add all panels to the main frame ---
         mainFrame.add(displayPanel, BorderLayout.NORTH);
         mainFrame.add(buttonPanel, BorderLayout.CENTER);
         mainFrame.add(historyPanel, BorderLayout.EAST);
-        mainFrame.setVisible(true);
 
-        // Step 4: Focus display field after UI is visible
-        SwingUtilities.invokeLater(() -> displayField.requestFocusInWindow());
+        mainFrame.setVisible(true); // Display the main frame
     }
 
+    /**
+     * Creates a JButton with the specified label.
+     * Sets the font, background color, and registers an action listener.
+     *
+     * @param label The text to display on the button
+     * @return A configured JButton object
+     */
     private JButton createButton(String label) {
-        JButton button = new JButton(label);
-        button.setFont(new Font("Tahoma", Font.BOLD, 16));
-        button.setFocusPainted(false);
+        JButton button = new JButton(label);         // Create a new button with the given label
+        button.setFont(new Font("Tahoma", Font.BOLD, 16)); // Set the button's font
+        button.setFocusPainted(false);                 // Disable focus painting
         button.setPreferredSize(new Dimension(60, 60));
-        button.setBackground(label.equals("C") || label.equals("CE") || label.equals("B")
-                ? new Color(255, 160, 122) : new Color(230, 230, 230));
-        button.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180)));
-        button.addActionListener(e -> handleButtonEvent(label));
-        return button;
+        button.setBackground(new Color(230, 230, 230));  // Set a light gray background
+        button.setBorder(BorderFactory.createLineBorder(new Color(180,180,180)));
+        if (label.equals("C") || label.equals("B")) {
+            button.setBackground(new Color(255, 160, 122));
+        } else {
+            button.setBackground(new Color(230, 230, 230));
+        }
+        // Register an action listener to handle button clicks
+        button.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                handleButtonEvent(label);            // Handle the event based on the button label
+            }
+        });
+        return button;                                 // Return the created button
     }
 
-    private void toggleAngleMode() {
-        isDegreeMode = !isDegreeMode;
-        JOptionPane.showMessageDialog(mainFrame, "Chế độ góc: " + (isDegreeMode ? "Độ" : "Radian"));
-    }
-
+    /**
+     * Handles button click events.
+     * For the "(-)" button, toggles the sign of the current value.
+     * Now, if the display is "0" or empty, pressing "(-)" will insert a "-"
+     * so that the user can type the negative number.
+     *
+     * @param label The label of the button that was pressed
+     */
     private void handleButtonEvent(String label) {
+        // If a calculation was done and the user presses a digit, clear the display for new input
         if (calculationDone && Character.isDigit(label.charAt(0))) {
             displayField.setText("");
             calculationDone = false;
         }
-
-        switch (label) {
-            case "C" ->
-                displayField.setText("0");
-            case "CE" ->
-                clearCurrentEntry();
-            case "←" ->
-                moveCaretLeft();
-            case "→" ->
-                moveCaretRight();
-            case "B" ->
-                deleteLastChar();
-            case "=" ->
-                performCalculation();
-            case "(-)" ->
-                toggleSign();
-            case "√" ->
-                appendToDisplay("√");
-            case "x^y" ->
-                appendToDisplay("^");
-            case "sin", "cos", "tan", "cot", "ln", "log" -> 
-            	appendToDisplay(label + "(");
-            case "n!" -> 
-            	appendToDisplay("!");
-            case "Deg↔Rad" -> 
-            	toggleAngleMode();
-            default ->
-                appendToDisplay(label);
-        }
-    }
-
-    private void moveCaretLeft() {
-        int pos = displayField.getCaretPosition();
-        if (pos > 0) {
-            displayField.requestFocusInWindow();
-            displayField.setCaretPosition(pos - 1);
-        }
-    }
-
-    private void moveCaretRight() {
-        int pos = displayField.getCaretPosition();
-        if (pos < displayField.getText().length()) {
-            displayField.requestFocusInWindow();
-            displayField.setCaretPosition(pos + 1);
-        }
-    }
-
-    private void clearCurrentEntry() {
-        String text = displayField.getText();
-        int pos = displayField.getCaretPosition();
-        int left = pos - 1;
-
-        while (left >= 0 && (Character.isDigit(text.charAt(left)) || text.charAt(left) == '.')) {
-            left--;
-        }
-
-        int right = pos;
-        while (right < text.length() && (Character.isDigit(text.charAt(right)) || text.charAt(right) == '.')) {
-            right++;
-        }
-
-        String newText = text.substring(0, left + 1) + text.substring(right);
-        displayField.setText(newText.isEmpty() ? "0" : newText);
-        displayField.setCaretPosition(Math.min(left + 1, newText.length()));
-        displayField.requestFocusInWindow();
-    }
-
-    private void deleteLastChar() {
-        int pos = displayField.getCaretPosition();
-        String text = displayField.getText();
-        if (pos > 0 && !text.isEmpty()) {
-            displayField.setText(text.substring(0, pos - 1) + text.substring(pos));
-            displayField.setCaretPosition(pos - 1);
-        }
-        displayField.requestFocusInWindow();
-    }
-
-    private void toggleSign() {
-        String currentText = displayField.getText();
-        if (currentText.equals("0") || currentText.isEmpty()) {
-            displayField.setText("-");
-        } else if (currentText.startsWith("-")) {
-            displayField.setText(currentText.substring(1));
+        // Process the button based on its label
+        if (label.equals("C")) {
+            displayField.setText("0");               // Clear the display
+        } else if (label.equals("B")) {
+            deleteLastChar();                        // Delete the last character
+        } else if (label.equals("=")) {
+            performCalculation();                    // Calculate the expression
+        } else if (label.equals("(-)")) {
+            // Updated behavior: if the display is "0" or empty, insert "-" to allow negative input
+            String currentText = displayField.getText();
+            if (currentText.equals("0") || currentText.isEmpty()) {
+                displayField.setText("-");
+            } else {
+                // Otherwise, toggle the sign of the current number
+                if (currentText.startsWith("-")) {
+                    displayField.setText(currentText.substring(1));
+                } else {
+                    displayField.setText("-" + currentText);
+                }
+            }
+        } else if (label.equals("√")) {
+            appendToDisplay("√");                    // Append the square root symbol
+        } else if (label.equals("x^y")) {
+            appendToDisplay("^");                    // Append the exponentiation symbol
         } else {
-            displayField.setText("-" + currentText);
+            appendToDisplay(label);                  // Append the button label (numbers/operators)
         }
     }
 
+    /**
+     * Sets up keyboard shortcuts using the KeyboardFocusManager.
+     */
+    private void setupKeyBindings() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+            public boolean dispatchKeyEvent(KeyEvent e) {
+                // Process key typed events
+                if (e.getID() == KeyEvent.KEY_TYPED) {
+                    char c = e.getKeyChar();         // Get the typed character
+                    // If the character is a digit or a valid operator, append it to the display
+                    if (Character.isDigit(c) || "+-*/().^%".indexOf(c) != -1) {
+                        appendToDisplay(String.valueOf(c));
+                        return true;
+                    } else if (c == '\n') {          // If Enter is pressed
+                        performCalculation();        // Calculate the expression
+                        return true;
+                    }
+                } else if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+                    // If Backspace is pressed, delete the last character
+                    deleteLastChar();
+                    return true;
+                }
+                return false; // For unhandled keys, return false
+            }
+        });
+    }
+
+    /**
+     * Appends the given text to the display field.
+     *
+     * @param text The text to append
+     */
     private void appendToDisplay(String text) {
+        // If a calculation was just performed, clear the display first
         if (calculationDone) {
             displayField.setText("");
             calculationDone = false;
         }
-
-        int pos = displayField.getCaretPosition();
-        String currentText = displayField.getText();
-
-        if (currentText.equals("0")) {
+        // If the display currently shows "0", replace it; otherwise, append the text
+        if (displayField.getText().equals("0")) {
             displayField.setText(text);
-            displayField.setCaretPosition(text.length());
         } else {
-            String newText = currentText.substring(0, pos) + text + currentText.substring(pos);
-            displayField.setText(newText);
-            displayField.setCaretPosition(pos + text.length());
+            displayField.setText(displayField.getText() + text);
         }
-        displayField.requestFocusInWindow();
     }
 
+    /**
+     * Deletes the last character from the display field.
+     */
+    private void deleteLastChar() {
+        String currentText = displayField.getText(); // Get the current display text
+        if (currentText.length() > 1) {
+            displayField.setText(currentText.substring(0, currentText.length() - 1));
+        } else {
+            displayField.setText("0");
+        }
+    }
+
+    /**
+     * Performs the calculation by reading the expression from the display,
+     * evaluating it, and then updating the display and history.
+     */
     private void performCalculation() {
         try {
-            String expression = displayField.getText();
-            if (expression.isEmpty()) {
-                return;
-            }
-            double result = evaluateExpression(expression);
-            String resultStr = formatResult(result);
-            historyModel.addElement(expression + " = " + resultStr);
-            displayField.setText(resultStr);
-            displayField.setCaretPosition(resultStr.length());
-            calculationDone = true;
+            String expression = displayField.getText(); // Get the expression from the display
+            if (expression.isEmpty()) return;
+            double result = evaluateExpression(expression); // Evaluate the expression using the parser
+            String resultStr = formatResult(result);          // Format the result for display
+            historyModel.addElement(expression + " = " + resultStr); // Add the calculation to history
+            displayField.setText(resultStr);   // Update the display with the result
+            calculationDone = true;            // Mark that a calculation was completed
         } catch (ArithmeticException ex) {
-            JOptionPane.showMessageDialog(mainFrame, "Math error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            // Handle division by zero
+            if ("Divide by zero".equals(ex.getMessage())) {
+                JOptionPane.showMessageDialog(mainFrame,
+                        "Cannot divide by zero!",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(mainFrame,
+                        "Arithmetic error: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         } catch (RuntimeException ex) {
-            JOptionPane.showMessageDialog(mainFrame, "Invalid expression!", "Error", JOptionPane.ERROR_MESSAGE);
+            // Handle any other errors (like invalid expressions)
+            JOptionPane.showMessageDialog(mainFrame,
+                    "Invalid expression!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    /**
+     * Evaluates a mathematical expression using a recursive descent parser.
+     *
+     * @param expression The expression as a string
+     * @return The result of the evaluation
+     */
     private double evaluateExpression(String expression) {
-        return new ExpressionParser(expression).parse();
+        ExpressionParser parser = new ExpressionParser(expression);
+        return parser.parse();
     }
 
+    /**
+     * Formats the result so that if the result is an integer,
+     * the decimal part is not shown.
+     *
+     * @param value The value to format
+     * @return A string representation of the result
+     */
     private String formatResult(double value) {
-        return (value == (long) value) ? String.valueOf((long) value) : String.valueOf(value);
+        if (value == (long) value)
+            return String.valueOf((long) value);
+        else
+            return String.valueOf(value);
     }
 
-    private void setupKeyBindings() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
-            if (e.getID() == KeyEvent.KEY_TYPED) {
-                char c = e.getKeyChar();
-                if (Character.isDigit(c) || "+-*/().^%".indexOf(c) != -1) {
-                    appendToDisplay(String.valueOf(c));
-                    return true;
-                } else if (c == '\n') {
-                    performCalculation();
-                    return true;
-                }
-            } else if (e.getID() == KeyEvent.KEY_PRESSED) {
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_BACK_SPACE -> {
-                        deleteLastChar();
-                        return true;
-                    }
-                    case KeyEvent.VK_LEFT -> {
-                        moveCaretLeft();
-                        return true;
-                    }
-                    case KeyEvent.VK_RIGHT -> {
-                        moveCaretRight();
-                        return true;
-                    }
-                }
-            }
-            return false;
-        });
-    }
-
+    /**
+     * ExpressionParser uses recursive descent parsing to evaluate mathematical expressions.
+     * Supported operators: +, -, *, /, exponentiation (^), square root (√), and percentage (%).
+     */
     private class ExpressionParser {
+        private final String input; // The input expression
+        private int pos = -1;       // Current position in the input string
+        private int currentChar;    // Current character as an ASCII value
 
-        private final String input;
-        private int pos = -1;
-        private int currentChar;
-
+        /**
+         * Constructor: Initializes the parser with the given expression.
+         *
+         * @param input The mathematical expression as a string
+         */
         public ExpressionParser(String input) {
             this.input = input;
-            nextChar();
+            nextChar(); // Move to the first character
         }
 
+        /**
+         * Advances to the next character in the input.
+         */
         private void nextChar() {
             pos++;
             currentChar = (pos < input.length()) ? input.charAt(pos) : -1;
         }
 
+        /**
+         * Consumes the current character if it matches the expected character.
+         *
+         * @param charToEat The character we expect
+         * @return true if the character was consumed, false otherwise
+         */
         private boolean eat(int charToEat) {
             while (currentChar == ' ') {
                 nextChar();
@@ -299,127 +312,226 @@ public class MySimpleCalculator {
             return false;
         }
 
+        /**
+         * Parses the full expression and returns its value.
+         *
+         * @return The evaluated result of the expression
+         */
         public double parse() {
             double result = parseExpression();
             if (pos < input.length()) {
-                throw new RuntimeException("Unexpected: " + (char) currentChar);
+                throw new RuntimeException("Unexpected character: " + (char) currentChar);
             }
             return result;
         }
 
+        /**
+         * Parses an expression.
+         * Expression = Term { ('+' | '-') Term }
+         *
+         * @return The evaluated value of the expression
+         */
         private double parseExpression() {
             double result = parseTerm();
             while (true) {
                 if (eat('+')) {
-                    result += parseTerm();
+                    result += parseTerm(); // Addition
                 } else if (eat('-')) {
-                    result -= parseTerm();
+                    result -= parseTerm(); // Subtraction
                 } else {
                     return result;
                 }
             }
         }
 
+        /**
+         * Parses a term.
+         * Term = Factor { ('*' | '/') Factor }
+         *
+         * @return The evaluated value of the term
+         */
         private double parseTerm() {
             double result = parseFactor();
             while (true) {
                 if (eat('*')) {
-                    result *= parseFactor();
+                    result *= parseFactor(); // Multiplication
                 } else if (eat('/')) {
-                    double denom = parseFactor();
-                    if (denom == 0) {
+                    double denominator = parseFactor(); // Division
+                    if (denominator == 0.0) {
                         throw new ArithmeticException("Divide by zero");
                     }
-                    result /= denom;
+                    result /= denominator;
                 } else {
                     return result;
                 }
             }
         }
 
+       
         private double parseFactor() {
-            if (eat('+')) {
-                return parseFactor();
-            }
-            if (eat('-')) {
-                return -parseFactor();
-            }
+            // Handle unary plus and minus
+            if (eat('+')) return parseFactor();
+            if (eat('-')) return -parseFactor();
 
             double result;
-            int startPos = pos;
+            int startPos = pos; // Remember start position for numbers
 
-            String func = null;
-            if (Character.isLetter(currentChar)) {
-                int startFunc = pos;
-                while (Character.isLetter(currentChar)) nextChar();
-                func = input.substring(startFunc, pos);
-            }
-
-            if (func != null) {
-                if (!eat('(')) throw new RuntimeException("Missing '(' after " + func);
-                double arg = parseExpression();
-                if (!eat(')')) throw new RuntimeException("Missing ')'");
-
-                if (isDegreeMode && (func.equals("sin") || func.equals("cos") || func.equals("tan") || func.equals("cot"))) {
-                    arg = Math.toRadians(arg);
-                }
-
-                switch (func) {
-                    case "sin" -> result = Math.sin(arg);
-                    case "cos" -> result = Math.cos(arg);
-                    case "tan" -> result = Math.tan(arg);
-                    case "cot" -> result = 1.0 / Math.tan(arg);
-                    case "log" -> result = Math.log10(arg);
-                    case "ln" -> result = Math.log(arg);
-                    default -> throw new RuntimeException("Unknown function: " + func);
-                }
-                return result;
-            }
-            
+            // Handle square root: symbol '√'
             if (eat('√')) {
-                result = eat('(') ? parseExpression() : parseFactor();
-                if (!eat(')')) {
-                    throw new RuntimeException("Missing ')'");
+                if (eat('(')) {
+                    result = parseExpression();
+                    if (!eat(')')) {
+                        throw new RuntimeException("Missing ')' after square root");
+                    }
+                } else {
+                    result = parseFactor();
                 }
                 result = Math.sqrt(result);
                 if (eat('%')) {
-                    result /= 100;
+                    result /= 100.0;
                 }
-            } else if (eat('(')) {
+            }
+            // Handle parentheses
+            else if (eat('(')) {
                 result = parseExpression();
                 if (!eat(')')) {
                     throw new RuntimeException("Missing ')'");
                 }
-            } else if ((currentChar >= '0' && currentChar <= '9') || currentChar == '.') {
+            }
+            // Handle numbers
+            else if ((currentChar >= '0' && currentChar <= '9') || currentChar == '.') {
                 while ((currentChar >= '0' && currentChar <= '9') || currentChar == '.') {
                     nextChar();
                 }
-                result = Double.parseDouble(input.substring(startPos, pos));
+                String numberStr = input.substring(startPos, pos);
+                result = Double.parseDouble(numberStr);
                 if (eat('%')) {
-                    result /= 100;
+                    result /= 100.0;
                 }
             } else {
-                throw new RuntimeException("Unexpected: " + (char) currentChar);
+                throw new RuntimeException("Unexpected character: " + (char) currentChar);
             }
 
+            // Handle exponentiation '^'
             if (eat('^')) {
                 result = Math.pow(result, parseFactor());
             }
-            if (eat('!')) {
-                if (result < 0 || result != Math.floor(result)) throw new RuntimeException("Giai thừa không hợp lệ");
-                result = factorial((int) result);
-            }
             return result;
         }
+    }
+    
+   private JMenuBar createMenuBar() {
+    JMenuBar menuBar = new JMenuBar();
 
-        private double factorial(int n) {
-            double res = 1;
-            for (int i = 2; i <= n; i++) res *= i;
-            return res;
+    JMenu themeMenu = new JMenu("Giao diện");
+
+    // Create menu items
+    JMenuItem lightModeItem = new JMenuItem("Chế độ Sáng", UIManager.getIcon("FileView.directoryIcon"));
+    JMenuItem darkModeItem = new JMenuItem("Chế độ Tối", UIManager.getIcon("FileView.fileIcon"));
+    JMenuItem fontItem = new JMenuItem("Chọn Phông Chữ", UIManager.getIcon("FileChooser.detailsViewIcon"));
+    JMenuItem bgColorItem = new JMenuItem("Màu nền", UIManager.getIcon("OptionPane.informationIcon"));
+    JMenuItem fgColorItem = new JMenuItem("Màu chữ", UIManager.getIcon("OptionPane.questionIcon"));
+
+    // Add actions
+    lightModeItem.addActionListener(e -> setThemeMode("LIGHT"));
+    darkModeItem.addActionListener(e -> setThemeMode("DARK"));
+    fontItem.addActionListener(e -> chooseFont());
+    bgColorItem.addActionListener(e -> chooseBackgroundColor());
+    fgColorItem.addActionListener(e -> chooseForegroundColor());
+
+    // Add menu items to menu
+    themeMenu.add(lightModeItem);
+    themeMenu.add(darkModeItem);
+    themeMenu.addSeparator();
+    themeMenu.add(fontItem);
+    themeMenu.add(bgColorItem);
+    themeMenu.add(fgColorItem);
+
+    // Add menu to menu bar
+    menuBar.add(themeMenu);
+
+    return menuBar;
+}
+
+private void setThemeMode(String mode) {
+    Color bgColor, fgColor, btnColor;
+
+    if (mode.equals("DARK")) {
+        bgColor = new Color(40, 40, 40);
+        fgColor = Color.WHITE;
+        btnColor = new Color(70, 70, 70);
+    } else {
+        bgColor = Color.WHITE;
+        fgColor = Color.BLACK;
+        btnColor = new Color(230, 230, 230);
+    }
+
+    displayField.setBackground(bgColor);
+    displayField.setForeground(fgColor);
+    historyList.setBackground(bgColor);
+    historyList.setForeground(fgColor);
+
+    Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents(); // buttonPanel
+    for (Component c : components) {
+        if (c instanceof JButton) {
+            JButton btn = (JButton) c;
+            btn.setBackground(btnColor);
+            btn.setForeground(fgColor);
         }
     }
 
+    mainFrame.getContentPane().setBackground(bgColor);
+}
+private void chooseFont() {
+    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    String[] fonts = ge.getAvailableFontFamilyNames();
+
+    String selectedFontName = (String) JOptionPane.showInputDialog(
+        mainFrame,
+        "Chọn Phông Chữ:",
+        "Chọn Phông Chữ",
+        JOptionPane.PLAIN_MESSAGE,
+        null,
+        fonts,
+        displayField.getFont().getFamily()
+    );
+
+    if (selectedFontName != null) {
+        Font selectedFont = new Font(selectedFontName, Font.PLAIN, 16);
+        displayField.setFont(selectedFont);
+        historyList.setFont(selectedFont.deriveFont(14f));
+
+        Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents();
+        for (Component c : components) {
+            if (c instanceof JButton) {
+                ((JButton) c).setFont(selectedFont.deriveFont(16f));
+            }
+        }
+    }
+}
+private void chooseBackgroundColor() {
+    Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Nền", displayField.getBackground());
+    if (color != null) {
+        displayField.setBackground(color);
+        historyList.setBackground(color);
+        mainFrame.getContentPane().setBackground(color);
+    }
+}
+
+private void chooseForegroundColor() {
+    Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Chữ", displayField.getForeground());
+    if (color != null) {
+        displayField.setForeground(color);
+        historyList.setForeground(color);
+    }
+}
+
+    
+
+    /**
+     * The main method to start the application.
+     */
     public static void main(String[] args) {
-        new MySimpleCalculator();
+        new MySimpleCalculator(); // Create an instance to launch the calculator
     }
 }
