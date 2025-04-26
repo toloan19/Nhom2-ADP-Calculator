@@ -1,8 +1,13 @@
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+import java.awt.*;                      // Import AWT classes for GUI components
+import java.awt.event.*;                // Import classes for event handling (keyboard, mouse, etc.)
+import javax.swing.*;                   // Import Swing classes for building the GUI
+import javax.swing.border.EmptyBorder; // Import EmptyBorder to add empty space around components
+
+/**
+ * SimpleCalculator simulates a basic calculator with a GUI. This code follows
+ * clean code principles with clear variable and method names.
+ */
 
 public class MySimpleCalculator {
 
