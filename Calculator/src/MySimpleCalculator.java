@@ -41,15 +41,16 @@ public class MySimpleCalculator {
         JPanel displayPanel = new JPanel(new BorderLayout());
         displayPanel.add(displayField, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(7, 4, 5, 5));
+        JPanel buttonPanel = new JPanel(new GridLayout(7, 5, 5, 5));
+     
         String[] buttonLabels = {
-            "C", "CE", "(", ")",
-            "7", "8", "9", "/",
-            "4", "5", "6", "*",
-            "1", "2", "3", "-",
-            "0", ".", "=", "+",
-            "x^y", "√", "%", "(-)",
-            "←", "→", "B", ""
+        	"C", "CE", "B","(", ")",
+        	"7", "8", "9","+","-",  
+        	"4", "5", "6", "*", "/", 
+        	"1", "2", "3", ".", "(-)",
+        	"0", "√", "%", "x^y","n!",
+        	"sin", "cos", "tan", "cot", 
+        	"ln", "log", "Deg↔Rad",	"→", "←", "=",
         };
 
         for (String label : buttonLabels) {
@@ -95,6 +96,11 @@ public class MySimpleCalculator {
         return button;
     }
 
+    private void toggleAngleMode() {
+        isDegreeMode = !isDegreeMode;
+        JOptionPane.showMessageDialog(mainFrame, "Chế độ góc: " + (isDegreeMode ? "Độ" : "Radian"));
+    }
+
     private void handleButtonEvent(String label) {
         if (calculationDone && Character.isDigit(label.charAt(0))) {
             displayField.setText("");
@@ -120,6 +126,12 @@ public class MySimpleCalculator {
                 appendToDisplay("√");
             case "x^y" ->
                 appendToDisplay("^");
+            case "sin", "cos", "tan", "cot", "ln", "log" -> 
+            	appendToDisplay(label + "(");
+            case "n!" -> 
+            	appendToDisplay("!");
+            case "Deg↔Rad" -> 
+            	toggleAngleMode();
             default ->
                 appendToDisplay(label);
         }
@@ -336,6 +348,34 @@ public class MySimpleCalculator {
             double result;
             int startPos = pos;
 
+            String func = null;
+            if (Character.isLetter(currentChar)) {
+                int startFunc = pos;
+                while (Character.isLetter(currentChar)) nextChar();
+                func = input.substring(startFunc, pos);
+            }
+
+            if (func != null) {
+                if (!eat('(')) throw new RuntimeException("Missing '(' after " + func);
+                double arg = parseExpression();
+                if (!eat(')')) throw new RuntimeException("Missing ')'");
+
+                if (isDegreeMode && (func.equals("sin") || func.equals("cos") || func.equals("tan") || func.equals("cot"))) {
+                    arg = Math.toRadians(arg);
+                }
+
+                switch (func) {
+                    case "sin" -> result = Math.sin(arg);
+                    case "cos" -> result = Math.cos(arg);
+                    case "tan" -> result = Math.tan(arg);
+                    case "cot" -> result = 1.0 / Math.tan(arg);
+                    case "log" -> result = Math.log10(arg);
+                    case "ln" -> result = Math.log(arg);
+                    default -> throw new RuntimeException("Unknown function: " + func);
+                }
+                return result;
+            }
+            
             if (eat('√')) {
                 result = eat('(') ? parseExpression() : parseFactor();
                 if (!eat(')')) {
@@ -365,7 +405,17 @@ public class MySimpleCalculator {
             if (eat('^')) {
                 result = Math.pow(result, parseFactor());
             }
+            if (eat('!')) {
+                if (result < 0 || result != Math.floor(result)) throw new RuntimeException("Giai thừa không hợp lệ");
+                result = factorial((int) result);
+            }
             return result;
+        }
+
+        private double factorial(int n) {
+            double res = 1;
+            for (int i = 2; i <= n; i++) res *= i;
+            return res;
         }
     }
 
