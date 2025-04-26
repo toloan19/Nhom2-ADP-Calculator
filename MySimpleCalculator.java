@@ -240,6 +240,15 @@ public class MySimpleCalculator {
             if (expression.isEmpty()) {
                 return;
             }
+            // Validate the expression
+            // Check if the expression is valid
+            if (!isValidExpression(expression)) {
+                JOptionPane.showMessageDialog(mainFrame,
+                        "Invalid expression! Please check your input.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             double result = evaluateExpression(expression); // Evaluate the expression using the parser
             String resultStr = formatResult(result);          // Format the result for display
             historyModel.addElement(expression + " = " + resultStr); // Add the calculation to history
@@ -262,6 +271,12 @@ public class MySimpleCalculator {
             // Handle any other errors (like invalid expressions)
             JOptionPane.showMessageDialog(mainFrame,
                     "Invalid expression!",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }catch (Exception ex) {
+            // Xử lý lỗi không mong muốn
+            JOptionPane.showMessageDialog(mainFrame,
+                    "An unexpected error occurred: " + ex.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
@@ -420,6 +435,9 @@ public class MySimpleCalculator {
                 } else {
                     result = parseFactor();
                 }
+                if (result < 0) {
+                    throw new ArithmeticException("Square root of a negative number");
+                }                // Calculate the square root
                 result = Math.sqrt(result);
                 if (eat('%')) {
                     result /= 100.0;
@@ -446,10 +464,41 @@ public class MySimpleCalculator {
 
             // Handle exponentiation '^'
             if (eat('^')) {
-                result = Math.pow(result, parseFactor());
+                double exponent = parseFactor();
+                if (result > 0 && exponent > Math.log(Double.MAX_VALUE) / Math.log(result)) {
+                    throw new ArithmeticException("Exponentiation result too large");
+                }
+                result = Math.pow(result, exponent);
             }
             return result;
         }
+    }
+
+    private boolean isValidExpression(String expression) {
+        // Kiểm tra biểu thức rỗng
+        if (expression == null || expression.trim().isEmpty()) {
+            return false;
+        }
+        // Kiểm tra số lượng dấu ngoặc
+        int openBrackets = 0;
+        char prevChar = '\0';
+        for (char c : expression.toCharArray()) {
+            if (c == '(') openBrackets++;
+            if (c == ')') openBrackets--;
+            if (openBrackets < 0) return false; // Dấu ngoặc đóng nhiều hơn mở
+            // Check for invalid characters
+            if (!Character.isDigit(c) && "+-*/().^√%".indexOf(c) == -1) {
+                return false;
+            }
+
+            // Check for consecutive operators
+            if ("+-*/^".indexOf(c) != -1 && "+-*/^".indexOf(prevChar) != -1) {
+                return false;
+            }
+
+            prevChar = c;
+        }
+        return openBrackets == 0; // Đảm bảo số lượng dấu ngoặc cân bằng
     }
 
     /**
