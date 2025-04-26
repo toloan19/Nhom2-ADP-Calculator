@@ -1,1 +1,0 @@
-# Nhom2-ADP-Calculator
