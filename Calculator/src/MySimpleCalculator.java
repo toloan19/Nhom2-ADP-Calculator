@@ -73,6 +73,17 @@ public class MySimpleCalculator {
         for (String label : buttonLabels) {
             buttonPanel.add(createButton(label));
         }
+        // Thêm nút "Copy" vào clipboard
+        JButton copyButton = new JButton("Copy");
+        copyButton.setFont(new Font("Tahoma", Font.PLAIN, 14));
+        copyButton.setFocusPainted(false);
+        copyButton.addActionListener((ActionEvent e) -> {
+            String result = displayField.getText();
+            StringSelection selection = new StringSelection(result);
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(selection, null);
+        });
+        displayPanel.add(copyButton, BorderLayout.EAST);
 
         // === Tạo bảng lịch sử ===
         historyModel = new DefaultListModel<>();          // Tạo model cho lịch sử
@@ -139,6 +150,7 @@ public class MySimpleCalculator {
      *
      * @param label Nhãn của nút đã được nhấn
      */
+    
     private void handleButtonEvent(String label) {
         // Nếu một phép tính vừa được thực hiện và người dùng nhấn một chữ số, xóa màn hình để nhập mới
         if (calculationDone && Character.isDigit(label.charAt(0))) {
