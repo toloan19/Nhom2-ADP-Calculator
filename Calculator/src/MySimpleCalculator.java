@@ -3,7 +3,9 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-
+import java.io.*; // Thêm import cho thao tác file
+import javax.swing.ListCellRenderer;
+import javax.swing.text.DefaultCaret; 
 public class MySimpleCalculator {
 
     private JFrame mainFrame;
@@ -18,7 +20,8 @@ public class MySimpleCalculator {
      * Constructor: Khởi tạo máy tính bằng cách thiết lập giao diện và phím tắt.
      */
     public MySimpleCalculator() {
-        setupUI();          // Thiết lập giao diện người dùng
+        setupUI();  // Thiết lập giao diện người dùng
+        loadHistoryFromFile(); // Đọc lịch sử từ file khi khởi động
         setupKeyBindings(); // Thiết lập phím tắt bàn phím
     }
 
@@ -98,6 +101,17 @@ public class MySimpleCalculator {
         historyPanel.add(historyLabel, BorderLayout.NORTH);
         historyPanel.add(historyScrollPane, BorderLayout.CENTER);
 
+        // Thêm ô tìm kiếm và nút search
+        JPanel searchPanel = new JPanel(new BorderLayout(5, 0));
+        JTextField searchField = new JTextField();
+        JButton searchButton = new JButton("🔍"); // Có thể thay bằng icon nếu muốn
+        JButton resetButton = new JButton("Reset");
+        searchPanel.add(resetButton, BorderLayout.WEST);
+        searchPanel.add(searchField, BorderLayout.CENTER);
+        searchPanel.add(searchButton, BorderLayout.EAST);
+        historyPanel.add(searchPanel, BorderLayout.SOUTH);
+
+
         // === Thêm tất cả các bảng vào khung chính ===
         mainFrame.add(displayPanel, BorderLayout.NORTH);
         mainFrame.add(buttonPanel, BorderLayout.CENTER);
@@ -113,6 +127,42 @@ public class MySimpleCalculator {
      * @param label Văn bản hiển thị trên nút
      * @return Đối tượng JButton đã được cấu hình
      */
+     // Bắt sự kiện click vào nút X
+        historyList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int index = historyList.locationToIndex(e.getPoint());
+                if (index != -1) {
+                    Rectangle cellBounds = historyList.getCellBounds(index, index);
+                    int xInCell = e.getX() - cellBounds.x;
+                    int width = cellBounds.width;
+                    // Giả sử nút X nằm ở bên phải, rộng 40px
+                    if (xInCell > width - 40) {
+                        historyModel.remove(index);
+                        saveHistoryToFile();
+                        fullHistory.remove(index);
+                    }
+                }
+            }
+        });
+ // Sự kiện tìm kiếm
+        searchButton.addActionListener(e -> {
+            String keyword = searchField.getText().trim().toLowerCase();
+            historyModel.clear();
+            for (String s : fullHistory) {
+                if (s.toLowerCase().contains(keyword)) {
+                    historyModel.addElement(s);
+                }
+            }
+        });
+ // Sự kiện reset (hiện lại toàn bộ lịch sử)
+        resetButton.addActionListener(e -> {
+            searchField.setText("");
+            historyModel.clear();
+            for (String s : fullHistory) {
+                historyModel.addElement(s);
+            }
+        });
     private JButton createButton(String label) {
         JButton button = new JButton(label);         // Tạo nút mới với nhãn đã cho
         button.setFont(new Font("Tahoma", Font.BOLD, 16)); // Đặt font cho nút
@@ -714,7 +764,68 @@ public class MySimpleCalculator {
             }
             return result;
         }
+// Đọc lịch sử từ file vào historyModel
+    private void loadHistoryFromFile() {
+        fullHistory.clear();
+        historyModel.clear();
+        try (BufferedReader reader = new BufferedReader(new FileReader(HISTORY_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                fullHistory.add(line);
+                historyModel.addElement(line);
+            }
+        } catch (IOException e) {
+            // Nếu file chưa tồn tại thì bỏ qua
+        }
+    }
 
+    // Ghi thêm một phép tính vào file lịch sử
+    private void appendHistoryToFile(String historyLine) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HISTORY_FILE, true))) {
+            writer.write(historyLine);
+            writer.newLine();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(mainFrame, "Không thể ghi lịch sử vào file!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Custom renderer cho từng dòng lịch sử với nút X
+    private class HistoryCellRenderer extends JPanel implements ListCellRenderer<String> {
+        JLabel label;
+        JButton deleteButton;
+
+        public HistoryCellRenderer() {
+            setLayout(new BorderLayout());
+            label = new JLabel();
+            deleteButton = new JButton("X");
+            deleteButton.setMargin(new Insets(2, 6, 2, 6));
+            deleteButton.setFocusable(false);
+            deleteButton.setForeground(Color.RED);
+            add(label, BorderLayout.CENTER);
+            add(deleteButton, BorderLayout.EAST);
+        }
+
+        @Override
+        public Component getListCellRendererComponent(JList<? extends String> list, String value, int index,
+                                                      boolean isSelected, boolean cellHasFocus) {
+            label.setText(value);
+            setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
+            label.setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
+            return this;
+        }
+    }
+
+    // Hàm ghi lại toàn bộ historyModel vào file (ghi đè)
+    private void saveHistoryToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HISTORY_FILE))) {
+            for (int i = 0; i < historyModel.size(); i++) {
+                writer.write(historyModel.get(i));
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(mainFrame, "Không thể cập nhật file lịch sử!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
         private double factorial(int n) {
             double res = 1;
             for (int i = 2; i <= n; i++) res *= i;
