@@ -1,29 +1,26 @@
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.awt.event.KeyEvent;
+import java.awt.*;                      // Import thư viện AWT cho các thành phần giao diện
+import java.awt.event.*;                // Import thư viện xử lý sự kiện (bàn phím, chuột)
+import javax.swing.*;                   // Import thư viện Swing để xây dựng giao diện
+import javax.swing.border.EmptyBorder;  // Import EmptyBorder để tạo khoảng trống xung quanh thành phần
+import javax.swing.text.DefaultCaret;   // Import DefaultCaret để tùy chỉnh con trỏ nhấp nháy
 import java.io.*; // Thêm import cho thao tác file
-import javax.swing.ListCellRenderer;
-import javax.swing.text.DefaultCaret; 
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
+
 public class MySimpleCalculator {
 
-    private JFrame mainFrame;
-    private JTextField displayField;
-    private DefaultListModel<String> historyModel;
-    private JList<String> historyList;
-    private boolean calculationDone = false;
+    // Khai báo các thành phần giao diện người dùng
+    private JFrame mainFrame;                 // Cửa sổ chính của ứng dụng
+    private JTextField displayField;          // Trường văn bản hiển thị biểu thức và kết quả
+    private DefaultListModel<String> historyModel; // Model lưu trữ lịch sử tính toán
+    private JList<String> historyList;        // Danh sách hiển thị lịch sử tính toán
+    private boolean calculationDone = false;  // Cờ đánh dấu phép tính vừa được thực hiện xong
+    private java.util.List<String> fullHistory = new java.util.ArrayList<>();
     private boolean isDegreeMode = true;
-
 
     /**
      * Constructor: Khởi tạo máy tính bằng cách thiết lập giao diện và phím tắt.
      */
     public MySimpleCalculator() {
-        setupUI();  // Thiết lập giao diện người dùng
-        loadHistoryFromFile(); // Đọc lịch sử từ file khi khởi động
+        setupUI();          // Thiết lập giao diện người dùng
         setupKeyBindings(); // Thiết lập phím tắt bàn phím
     }
 
@@ -43,8 +40,6 @@ public class MySimpleCalculator {
         displayField.setFont(new Font("Arial", Font.BOLD, 32));
         displayField.setHorizontalAlignment(JTextField.RIGHT);
         displayField.setEditable(true);
-        displayField.setCaretColor(Color.BLACK);
-        displayField.setFocusable(true);
 
         // Sửa lỗi cú pháp trong việc thiết lập DefaultCaret
         DefaultCaret caret = new DefaultCaret();
@@ -61,39 +56,32 @@ public class MySimpleCalculator {
         JPanel displayPanel = new JPanel(new BorderLayout());
         displayPanel.add(displayField, BorderLayout.CENTER);
 
-
+        // === Tạo bảng nút ===
         JPanel buttonPanel = new JPanel(new GridLayout(7, 5, 5, 5));
-
+        // Mảng nhãn nút (số, toán tử và chức năng đặc biệt)
         String[] buttonLabels = {
-                "C", "CE", "B", "(", ")",
-                "7", "8", "9", "+", "-",
-                "4", "5", "6", "*", "/",
-                "1", "2", "3", ".", "(-)",
-                "0", "√", "%", "x^y", "n!",
-                "sin", "cos", "tan", "cot",
-                "ln", "log", "Deg↔Rad", "→", "←", "=",
-
-        };
+            	"C", "CE", "B","(", ")",
+            	"7", "8", "9","+","-",  
+            	"4", "5", "6", "*", "/", 
+            	"1", "2", "3", ".", "(-)",
+            	"0", "√", "%", "x^y","n!",
+            	"sin", "cos", "tan", "cot", 
+            	"ln", "log", "Deg↔Rad",	"→", "←", "=",
+            };
         // Vòng lặp qua mỗi nhãn, tạo nút và thêm vào bảng
         for (String label : buttonLabels) {
-            buttonPanel.add(createButton(label));
+            if (label.isEmpty()) {
+                buttonPanel.add(new JLabel());
+            } else {
+                buttonPanel.add(createButton(label));
+            }
         }
-        // Thêm nút "Copy" vào clipboard
-        JButton copyButton = new JButton("Copy");
-        copyButton.setFont(new Font("Tahoma", Font.PLAIN, 14));
-        copyButton.setFocusPainted(false);
-        copyButton.addActionListener((ActionEvent e) -> {
-            String result = displayField.getText();
-            StringSelection selection = new StringSelection(result);
-            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-            clipboard.setContents(selection, null);
-        });
-        displayPanel.add(copyButton, BorderLayout.EAST);
 
         // === Tạo bảng lịch sử ===
         historyModel = new DefaultListModel<>();          // Tạo model cho lịch sử
         historyList = new JList<>(historyModel);            // Tạo danh sách hiển thị lịch sử
         historyList.setFont(new Font("Arial", Font.PLAIN, 14));
+        historyList.setCellRenderer(new HistoryCellRenderer()); // Gán renderer mới
         JScrollPane historyScrollPane = new JScrollPane(historyList); // Đặt danh sách trong thanh cuộn
         historyScrollPane.setPreferredSize(new Dimension(200, 0));    // Đặt chiều rộng ưu tiên
         JPanel historyPanel = new JPanel(new BorderLayout());
@@ -113,23 +101,14 @@ public class MySimpleCalculator {
         searchPanel.add(searchButton, BorderLayout.EAST);
         historyPanel.add(searchPanel, BorderLayout.SOUTH);
 
-
         // === Thêm tất cả các bảng vào khung chính ===
         mainFrame.add(displayPanel, BorderLayout.NORTH);
         mainFrame.add(buttonPanel, BorderLayout.CENTER);
         mainFrame.add(historyPanel, BorderLayout.EAST);
 
         mainFrame.setVisible(true); // Hiển thị khung chính
-    }
 
-    /**
-     * Tạo một JButton với nhãn chỉ định. Đặt font, màu nền và đăng ký người
-     * lắng nghe sự kiện.
-     *
-     * @param label Văn bản hiển thị trên nút
-     * @return Đối tượng JButton đã được cấu hình
-     */
-     // Bắt sự kiện click vào nút X
+        // Bắt sự kiện click vào nút X
         historyList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -141,13 +120,13 @@ public class MySimpleCalculator {
                     // Giả sử nút X nằm ở bên phải, rộng 40px
                     if (xInCell > width - 40) {
                         historyModel.remove(index);
-                        saveHistoryToFile();
                         fullHistory.remove(index);
                     }
                 }
             }
         });
- // Sự kiện tìm kiếm
+
+        // Sự kiện tìm kiếm
         searchButton.addActionListener(e -> {
             String keyword = searchField.getText().trim().toLowerCase();
             historyModel.clear();
@@ -157,7 +136,8 @@ public class MySimpleCalculator {
                 }
             }
         });
- // Sự kiện reset (hiện lại toàn bộ lịch sử)
+
+        // Sự kiện reset (hiện lại toàn bộ lịch sử)
         resetButton.addActionListener(e -> {
             searchField.setText("");
             historyModel.clear();
@@ -165,6 +145,15 @@ public class MySimpleCalculator {
                 historyModel.addElement(s);
             }
         });
+    }
+
+    /**
+     * Tạo một JButton với nhãn chỉ định. Đặt font, màu nền và đăng ký người
+     * lắng nghe sự kiện.
+     *
+     * @param label Văn bản hiển thị trên nút
+     * @return Đối tượng JButton đã được cấu hình
+     */
     private JButton createButton(String label) {
         JButton button = new JButton(label);         // Tạo nút mới với nhãn đã cho
         button.setFont(new Font("Tahoma", Font.BOLD, 16)); // Đặt font cho nút
@@ -189,7 +178,7 @@ public class MySimpleCalculator {
         });
         return button;                                 // Trả về nút đã tạo
     }
-
+    
     private void toggleAngleMode() {
         isDegreeMode = !isDegreeMode;
         JOptionPane.showMessageDialog(mainFrame, "Chế độ góc: " + (isDegreeMode ? "Độ" : "Radian"));
@@ -202,7 +191,6 @@ public class MySimpleCalculator {
      *
      * @param label Nhãn của nút đã được nhấn
      */
-    
     private void handleButtonEvent(String label) {
         // Nếu một phép tính vừa được thực hiện và người dùng nhấn một chữ số, xóa màn hình để nhập mới
         if (calculationDone && Character.isDigit(label.charAt(0))) {
@@ -210,20 +198,6 @@ public class MySimpleCalculator {
             calculationDone = false;
         }
 
-        switch (label) {
-            case "C" -> displayField.setText("0");
-            case "CE" -> clearCurrentEntry();
-            case "←" -> moveCaretLeft();
-            case "→" -> moveCaretRight();
-            case "B" -> deleteLastChar();
-            case "=" -> performCalculation();
-            case "(-)" -> toggleSign();
-            case "√" -> appendToDisplay("√");
-            case "x^y" -> appendToDisplay("^");
-            case "sin", "cos", "tan", "cot", "ln", "log" -> appendToDisplay(label + "(");
-            case "n!" -> appendToDisplay("!");
-            case "Deg↔Rad" -> toggleAngleMode();
-            default -> appendToDisplay(label);
         // Xử lý nút dựa trên nhãn của nó
         if (label.equals("C")) {
             displayField.setText("0");
@@ -254,8 +228,14 @@ public class MySimpleCalculator {
             appendToDisplay("√");                    // Thêm ký hiệu căn bậc hai
         } else if (label.equals("x^y")) {
             appendToDisplay("^");                    // Thêm ký hiệu lũy thừa
-        } else {
-            appendToDisplay(label);                  // Thêm nhãn nút (số/toán tử)
+        } else if (label.equals("sin") || label.equals("cos") || label.equals("tan") || label.equals("cot") || label.equals("ln") || label.equals("log")) {
+            appendToDisplay(label + "(");  // Thêm dấu "(" cho các hàm lượng giác và logarit
+        } else if (label.equals("n!")) {
+            appendToDisplay("!");  // Thêm dấu "!" cho phép tính giai thừa
+        } else if (label.equals("Deg↔Rad")) {
+            toggleAngleMode();  // Chuyển đổi giữa độ và radian
+        }  else {
+            appendToDisplay(label);  // Thêm các nhãn của các nút khác vào màn hình
         }
     }
 
@@ -453,6 +433,45 @@ public class MySimpleCalculator {
             displayField.requestFocusInWindow();
         });
     }
+    
+    private void moveCaretRight() {
+        int pos = displayField.getCaretPosition();
+        if (pos < displayField.getText().length()) {
+            displayField.requestFocusInWindow();
+            displayField.setCaretPosition(pos + 1);
+        }
+    }
+    
+    private void clearCurrentEntry() {
+        String text = displayField.getText();
+        int pos = displayField.getCaretPosition();
+        int left = pos - 1;
+
+        while (left >= 0 && (Character.isDigit(text.charAt(left)) || text.charAt(left) == '.')) {
+            left--;
+        }
+
+        int right = pos;
+        while (right < text.length() && (Character.isDigit(text.charAt(right)) || text.charAt(right) == '.')) {
+            right++;
+        }
+
+        String newText = text.substring(0, left + 1) + text.substring(right);
+        displayField.setText(newText.isEmpty() ? "0" : newText);
+        displayField.setCaretPosition(Math.min(left + 1, newText.length()));
+        displayField.requestFocusInWindow();
+    }
+    private void toggleSign() {
+        String currentText = displayField.getText();
+        if (currentText.equals("0") || currentText.isEmpty()) {
+            displayField.setText("-");
+        } else if (currentText.startsWith("-")) {
+            displayField.setText(currentText.substring(1));
+        } else {
+            displayField.setText("-" + currentText);
+        }
+    }
+    
 
     /**
      * Thực hiện phép tính bằng cách đọc biểu thức từ màn hình, đánh giá nó, sau
@@ -464,47 +483,32 @@ public class MySimpleCalculator {
             if (expression.isEmpty()) {
                 return;
             }
-        try {
-            String expression = displayField.getText(); // Lấy biểu thức từ màn hình
-            if (expression.isEmpty()) {
-                return;
-            }
-
-            validateExpression(expression); // Kiểm tra biểu thức
-            double result = evaluateExpression(expression); // Đánh giá biểu thức
-            checkNumberLimits(result); // Kiểm tra giới hạn số
-            String resultStr = formatResult(result); // Định dạng kết quả
-
-            historyModel.addElement(expression + " = " + resultStr); // Thêm vào lịch sử
-            displayField.setText(resultStr); // Cập nhật màn hình
-            displayField.setCaretPosition(resultStr.length());
-            calculationDone = true;
-
+            double result = evaluateExpression(expression); // Đánh giá biểu thức bằng bộ phân tích cú pháp
+            String resultStr = formatResult(result);        // Định dạng kết quả để hiển thị
+            String historyLine = expression + " = " + resultStr;
+            historyModel.addElement(historyLine); // Thêm phép tính vào lịch sử (bộ nhớ)
+            displayField.setText(resultStr);   // Cập nhật màn hình với kết quả
+            calculationDone = true;            // Đánh dấu rằng một phép tính đã hoàn thành
+            fullHistory.add(historyLine);
         } catch (ArithmeticException ex) {
-              if ("Divide by zero".equals(ex.getMessage())) {
-                  JOptionPane.showMessageDialog(mainFrame,
-                          "Cannot divide by zero!",
-                          "Error",
-                          JOptionPane.ERROR_MESSAGE);
-              } else {
-                  JOptionPane.showMessageDialog(mainFrame,
-                          "Arithmetic error: " + ex.getMessage(),
-                          "Error",
-                          JOptionPane.ERROR_MESSAGE);
-              }
-          } catch (NumberFormatException ex) {
-              JOptionPane.showMessageDialog(mainFrame,
-                      "Invalid number format: " + ex.getMessage(),
-                      "Error",
-                      JOptionPane.ERROR_MESSAGE);
-          } catch (RuntimeException ex) {
-              JOptionPane.showMessageDialog(mainFrame,
-                      "Invalid expression: " + ex.getMessage(),
-                      "Error",
-                      JOptionPane.ERROR_MESSAGE);
-          }
-
-
+            // Xử lý chia cho không
+            if ("Divide by zero".equals(ex.getMessage())) {
+                JOptionPane.showMessageDialog(mainFrame,
+                        "Không thể chia cho số không!",
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(mainFrame,
+                        "Lỗi số học: " + ex.getMessage(),
+                        "Lỗi",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (RuntimeException ex) {
+            // Xử lý bất kỳ lỗi nào khác (như biểu thức không hợp lệ)
+            JOptionPane.showMessageDialog(mainFrame,
+                    "Biểu thức không hợp lệ!: " + ex.getMessage(),
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -533,6 +537,7 @@ public class MySimpleCalculator {
             return String.valueOf(value);
         }
     }
+    
 
     /**
      * ExpressionParser sử dụng phân tích cú pháp giảm đệ quy để đánh giá các
@@ -544,7 +549,6 @@ public class MySimpleCalculator {
         private final String input; // Biểu thức đầu vào
         private int pos = -1;       // Vị trí hiện tại trong chuỗi đầu vào
         private int currentChar;    // Ký tự hiện tại dưới dạng giá trị ASCII
-
 
         /**
          * Constructor: Khởi tạo bộ phân tích với biểu thức đã cho.
@@ -589,7 +593,7 @@ public class MySimpleCalculator {
         public double parse() {
             double result = parseExpression();
             if (pos < input.length()) {
-                throw new RuntimeException("Unexpected character: " + (char) currentChar);
+                throw new RuntimeException("Ký tự không mong đợi: " + (char) currentChar);
             }
             return result;
         }
@@ -652,79 +656,49 @@ public class MySimpleCalculator {
             double result;
             int startPos = pos; // Ghi nhớ vị trí bắt đầu cho các số
 
-        String func = null;
-        if (Character.isLetter(currentChar)) {
-            int startFunc = pos;
-            while (Character.isLetter(currentChar)) nextChar();
-            func = input.substring(startFunc, pos);
-        }
-
-        if (func != null) {
-            if (!eat('(')) throw new RuntimeException("Missing '(' after " + func);
-            double arg = parseExpression();
-            if (!eat(')')) throw new RuntimeException("Missing ')'");
-
-            if (isDegreeMode && (func.equals("sin") || func.equals("cos") || func.equals("tan") || func.equals("cot"))) {
-                arg = Math.toRadians(arg);
+         // Hàm lượng giác & logarit
+            String func = null;
+            if (Character.isLetter(currentChar)) {
+                int startFunc = pos;
+                while (Character.isLetter(currentChar)) nextChar();
+                func = input.substring(startFunc, pos);
             }
 
-            switch (func) {
-                case "sin" -> {
-                    result = Math.sin(arg);
-                    checkNumberLimits(result);
-                }
-                case "cos" -> {
-                    result = Math.cos(arg);
-                    checkNumberLimits(result);
-                }
-                case "tan" -> {
-                    if (Math.abs(Math.cos(arg)) < 1e-10) {
-                        throw new ArithmeticException("Unknown value (tan)");
-                    }
-                    result = Math.tan(arg);
-                    checkNumberLimits(result);
-                }
-                case "cot" -> {
-                    if (Math.abs(Math.sin(arg)) < 1e-10) {
-                        throw new ArithmeticException("Unknown value (cot)");
-                    }
-                    result = 1.0 / Math.tan(arg);
-                    checkNumberLimits(result);
-                }
-                case "log" -> {
-                    if (arg <= 0) {
-                        throw new ArithmeticException("Invalid logarithm");
-                    }
-                    result = Math.log10(arg);
-                    checkNumberLimits(result);
-                }
-                case "ln" -> {
-                    if (arg <= 0) {
-                        throw new ArithmeticException("Invalid natural logarithm");
-                    }
-                    result = Math.log(arg);
-                    checkNumberLimits(result);
-                }
-                default -> throw new RuntimeException("Unknown function: " + func);
-            }
-            return result;
-        }
+            if (func != null) {
+                if (!eat('(')) throw new RuntimeException("Missing '(' after " + func);
+                double arg = parseExpression();
+                if (!eat(')')) throw new RuntimeException("Missing ')'");
 
-        // Xử lý căn bậc hai: ký hiệu '√'
-        if (eat('√')) {
-            result = eat('(') ? parseExpression() : parseFactor();
-            if (result < 0) {
-                throw new RuntimeException("Square root of a negative number is undefined");
-            }
-            result = Math.sqrt(result);
-            if (!eat(')')) {
-                throw new RuntimeException("Missing ')'");
-            }
-            return result;
-        }
-
+                if (isDegreeMode && (func.equals("sin") || func.equals("cos") || func.equals("tan") || func.equals("cot"))) {
+                    arg = Math.toRadians(arg);
                 }
-                result = Math.sqrt(result);
+
+                switch (func) {
+                    case "sin" -> result = Math.sin(arg);
+                    case "cos" -> result = Math.cos(arg);
+                    case "tan" -> result = Math.tan(arg);
+                    case "cot" -> result = 1.0 / Math.tan(arg);
+                    case "log" -> result = Math.log10(arg);
+                    case "ln" -> result = Math.log(arg);
+                    default -> throw new RuntimeException("Unknown function: " + func);
+                }
+                return result;
+            }
+            // Xử lý căn bậc hai: ký hiệu '√'
+            if (eat('√')) {
+                double value;
+                if (eat('(')) {
+                    value = parseExpression();
+                    if (!eat(')')) {
+                        throw new RuntimeException("Thiếu ')' sau căn bậc hai");
+                    }
+                } else {
+                    value = parseFactor();
+                }
+                if (value < 0) {
+                    throw new ArithmeticException("Không thể tính căn bậc hai của số âm: √" + value);
+                }
+                result = Math.sqrt(value);
                 if (eat('%')) {
                     result /= 100.0;
                 }
@@ -736,10 +710,18 @@ public class MySimpleCalculator {
                 }
             } // Xử lý số
             else if ((currentChar >= '0' && currentChar <= '9') || currentChar == '.') {
+                boolean hasDot = false;
                 while ((currentChar >= '0' && currentChar <= '9') || currentChar == '.') {
+                    if (currentChar == '.') {
+                        if (hasDot) throw new RuntimeException("Số không hợp lệ: nhiều dấu '.' liên tiếp");
+                        hasDot = true;
+                    }
                     nextChar();
                 }
                 String numberStr = input.substring(startPos, pos);
+                if (numberStr.equals(".") || numberStr.isEmpty()) {
+                    throw new RuntimeException("Số không hợp lệ: " + numberStr);
+                }
                 result = Double.parseDouble(numberStr);
                 if (eat('%')) {
                     result /= 100.0;
@@ -751,43 +733,21 @@ public class MySimpleCalculator {
             // Xử lý lũy thừa '^'
             if (eat('^')) {
                 double exponent = parseFactor();
-                if (result == 0 && exponent == 0) {
-                    throw new ArithmeticException("Indeterminate form: 0^0");
+                if (result < 0 && exponent != Math.floor(exponent)) {
+                    throw new ArithmeticException("Không hỗ trợ lũy thừa số âm với số mũ không nguyên: " + result + "^" + exponent);
                 }
                 result = Math.pow(result, exponent);
-                checkNumberLimits(result);
             }
             if (eat('!')) {
-                if (result < 0 || result != Math.floor(result)) {
-                    throw new ArithmeticException("Factorial is only defined for non-negative integers");
-                }
+                if (result < 0 || result != Math.floor(result)) throw new RuntimeException("Giai thừa không hợp lệ");
                 result = factorial((int) result);
-                checkNumberLimits(result); // Validate result
             }
             return result;
         }
-// Đọc lịch sử từ file vào historyModel
-    private void loadHistoryFromFile() {
-        fullHistory.clear();
-        historyModel.clear();
-        try (BufferedReader reader = new BufferedReader(new FileReader(HISTORY_FILE))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                fullHistory.add(line);
-                historyModel.addElement(line);
-            }
-        } catch (IOException e) {
-            // Nếu file chưa tồn tại thì bỏ qua
-        }
-    }
-
-    // Ghi thêm một phép tính vào file lịch sử
-    private void appendHistoryToFile(String historyLine) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HISTORY_FILE, true))) {
-            writer.write(historyLine);
-            writer.newLine();
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(mainFrame, "Không thể ghi lịch sử vào file!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        private double factorial(int n) {
+            double res = 1;
+            for (int i = 2; i <= n; i++) res *= i;
+            return res;
         }
     }
 
@@ -814,41 +774,6 @@ public class MySimpleCalculator {
             setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
             label.setForeground(isSelected ? list.getSelectionForeground() : list.getForeground());
             return this;
-        }
-    }
-
-    // Hàm ghi lại toàn bộ historyModel vào file (ghi đè)
-    private void saveHistoryToFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(HISTORY_FILE))) {
-            for (int i = 0; i < historyModel.size(); i++) {
-                writer.write(historyModel.get(i));
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(mainFrame, "Không thể cập nhật file lịch sử!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-        private double factorial(int n) {
-            double res = 1;
-            for (int i = 2; i <= n; i++) res *= i;
-            return res;
-        }
-    }
-
-    private void checkNumberLimits(double value) {
-        if (value > Double.MAX_VALUE) {
-            throw new ArithmeticException("Value exceeding the maximum limit of a real number");
-        }
-        if (value < -Double.MAX_VALUE) {
-            throw new ArithmeticException("Value exceeding the minimum limit of a real number");
-        }
-        if (Double.isNaN(value) || Double.isInfinite(value)) {
-            throw new ArithmeticException("Invalid value (NaN or Infinity)");
-        }
-    }
-    private void validateExpression(String expression) {
-        if (expression.contains(" ")) {
-            throw new RuntimeException("Expression contains invalid spaces");
         }
     }
 
