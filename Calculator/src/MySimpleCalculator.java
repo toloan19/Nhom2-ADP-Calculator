@@ -6,6 +6,8 @@ import java.awt.event.KeyEvent;
 import java.io.*; // Thêm import cho thao tác file
 import javax.swing.ListCellRenderer;
 import javax.swing.text.DefaultCaret; 
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 public class MySimpleCalculator {
 
     private JFrame mainFrame;
