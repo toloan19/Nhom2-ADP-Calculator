@@ -3,7 +3,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import javax.swing.text.DefaultCaret;   // Import DefaultCaret để tùy chỉnh con trỏ nhấp nháy
+import java.awt.event.*;                // Import thư viện xử lý sự kiện (bàn phím, chuột)
 public class MySimpleCalculator {
 
     private JFrame mainFrame;
