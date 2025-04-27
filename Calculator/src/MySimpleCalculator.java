@@ -4,6 +4,8 @@ import javax.swing.*;                   // Import thư viện Swing để xây d
 import javax.swing.border.EmptyBorder;  // Import EmptyBorder để tạo khoảng trống xung quanh thành phần
 import javax.swing.text.DefaultCaret;   // Import DefaultCaret để tùy chỉnh con trỏ nhấp nháy
 import java.io.*; // Thêm import cho thao tác file
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 
 public class MySimpleCalculator {
 
@@ -76,7 +78,17 @@ public class MySimpleCalculator {
                 buttonPanel.add(createButton(label));
             }
         }
-
+        //Bo sung chuc nang copy vao Clipboard
+        JButton copyButton = new JButton("Copy");
+        copyButton.setFont(new Font("Tahoma", Font.PLAIN, 14));
+        copyButton.setFocusPainted(false);
+        copyButton.addActionListener((ActionEvent e) -> {
+            String result = displayField.getText();
+            StringSelection selection = new StringSelection(result);
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(selection, null);
+        });
+        displayPanel.add(copyButton, BorderLayout.EAST);
         // === Tạo bảng lịch sử ===
         historyModel = new DefaultListModel<>();          // Tạo model cho lịch sử
         historyList = new JList<>(historyModel);            // Tạo danh sách hiển thị lịch sử
