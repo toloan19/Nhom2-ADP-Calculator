@@ -33,6 +33,7 @@ public class MySimpleCalculator {
     private void setupUI() {
         // === Tạo khung chính ===
         mainFrame = new JFrame("My Simple Calculator");
+        mainFrame.setJMenuBar(createMenuBar());
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.setSize(600, 600); // Đặt kích thước cửa sổ
         mainFrame.setLayout(new BorderLayout(10, 10)); // Sử dụng BorderLayout với khoảng cách 10 pixel
@@ -788,8 +789,114 @@ public class MySimpleCalculator {
             return this;
         }
     }
+    
+       private JMenuBar createMenuBar() {
+    JMenuBar menuBar = new JMenuBar();
 
+    JMenu themeMenu = new JMenu("Giao diện");
+
+    // Create menu items
+    JMenuItem lightModeItem = new JMenuItem("Chế độ Sáng", UIManager.getIcon("FileView.directoryIcon"));
+    JMenuItem darkModeItem = new JMenuItem("Chế độ Tối", UIManager.getIcon("FileView.fileIcon"));
+    JMenuItem fontItem = new JMenuItem("Chọn Phông Chữ", UIManager.getIcon("FileChooser.detailsViewIcon"));
+    JMenuItem bgColorItem = new JMenuItem("Màu nền", UIManager.getIcon("OptionPane.informationIcon"));
+    JMenuItem fgColorItem = new JMenuItem("Màu chữ", UIManager.getIcon("OptionPane.questionIcon"));
+
+    // Add actions
+    lightModeItem.addActionListener(e -> setThemeMode("LIGHT"));
+    darkModeItem.addActionListener(e -> setThemeMode("DARK"));
+    fontItem.addActionListener(e -> chooseFont());
+    bgColorItem.addActionListener(e -> chooseBackgroundColor());
+    fgColorItem.addActionListener(e -> chooseForegroundColor());
+
+    // Add menu items to menu
+    themeMenu.add(lightModeItem);
+    themeMenu.add(darkModeItem);
+    themeMenu.addSeparator();
+    themeMenu.add(fontItem);
+    themeMenu.add(bgColorItem);
+    themeMenu.add(fgColorItem);
+
+    // Add menu to menu bar
+    menuBar.add(themeMenu);
+
+    return menuBar;
+}
+
+private void setThemeMode(String mode) {
+    Color bgColor, fgColor, btnColor;
+
+    if (mode.equals("DARK")) {
+        bgColor = new Color(40, 40, 40);
+        fgColor = Color.WHITE;
+        btnColor = new Color(70, 70, 70);
+    } else {
+        bgColor = Color.WHITE;
+        fgColor = Color.BLACK;
+        btnColor = new Color(230, 230, 230);
+    }
+
+    displayField.setBackground(bgColor);
+    displayField.setForeground(fgColor);
+    historyList.setBackground(bgColor);
+    historyList.setForeground(fgColor);
+
+    Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents(); // buttonPanel
+    for (Component c : components) {
+        if (c instanceof JButton) {
+            JButton btn = (JButton) c;
+            btn.setBackground(btnColor);
+            btn.setForeground(fgColor);
+        }
+    }
+
+    mainFrame.getContentPane().setBackground(bgColor);
+}
+private void chooseFont() {
+    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    String[] fonts = ge.getAvailableFontFamilyNames();
+
+    String selectedFontName = (String) JOptionPane.showInputDialog(
+        mainFrame,
+        "Chọn Phông Chữ:",
+        "Chọn Phông Chữ",
+        JOptionPane.PLAIN_MESSAGE,
+        null,
+        fonts,
+        displayField.getFont().getFamily()
+    );
+
+    if (selectedFontName != null) {
+        Font selectedFont = new Font(selectedFontName, Font.PLAIN, 16);
+        displayField.setFont(selectedFont);
+        historyList.setFont(selectedFont.deriveFont(14f));
+
+        Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents();
+        for (Component c : components) {
+            if (c instanceof JButton) {
+                ((JButton) c).setFont(selectedFont.deriveFont(16f));
+            }
+        }
+    }
+}
+private void chooseBackgroundColor() {
+    Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Nền", displayField.getBackground());
+    if (color != null) {
+        displayField.setBackground(color);
+        historyList.setBackground(color);
+        mainFrame.getContentPane().setBackground(color);
+    }
+}
+
+private void chooseForegroundColor() {
+    Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Chữ", displayField.getForeground());
+    if (color != null) {
+        displayField.setForeground(color);
+        historyList.setForeground(color);
+    }
+}
     public static void main(String[] args) {
         MySimpleCalculator c = new MySimpleCalculator();
+        
     }
 }
