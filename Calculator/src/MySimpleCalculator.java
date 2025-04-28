@@ -1,11 +1,10 @@
-import java.awt.*;                      // Import thư viện AWT cho các thành phần giao diện
-import java.awt.event.*;                // Import thư viện xử lý sự kiện (bàn phím, chuột)
-import javax.swing.*;                   // Import thư viện Swing để xây dựng giao diện
-import javax.swing.border.EmptyBorder;  // Import EmptyBorder để tạo khoảng trống xung quanh thành phần
-import javax.swing.text.DefaultCaret;   // Import DefaultCaret để tùy chỉnh con trỏ nhấp nháy
-import java.io.*; // Thêm import cho thao tác file
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.DefaultCaret;
+import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.*;
 
 public class MySimpleCalculator {
 
@@ -63,14 +62,14 @@ public class MySimpleCalculator {
         JPanel buttonPanel = new JPanel(new GridLayout(7, 5, 5, 5));
         // Mảng nhãn nút (số, toán tử và chức năng đặc biệt)
         String[] buttonLabels = {
-            	"C", "CE", "B","(", ")",
-            	"7", "8", "9","+","-",  
-            	"4", "5", "6", "*", "/", 
-            	"1", "2", "3", ".", "(-)",
-            	"0", "√", "%", "x^y","n!",
-            	"sin", "cos", "tan", "cot", 
-            	"ln", "log", "Deg↔Rad",	"→", "←", "=",
-            };
+                "C", "CE", "B", "(", ")",
+                "7", "8", "9", "+", "-",
+                "4", "5", "6", "*", "/",
+                "1", "2", "3", ".", "(-)",
+                "0", "√", "%", "x^y", "n!",
+                "sin", "cos", "tan", "cot",
+                "ln", "log", "Deg↔Rad", "→", "←", "=",
+        };
         // Vòng lặp qua mỗi nhãn, tạo nút và thêm vào bảng
         for (String label : buttonLabels) {
             if (label.isEmpty()) {
@@ -191,7 +190,7 @@ public class MySimpleCalculator {
         });
         return button;                                 // Trả về nút đã tạo
     }
-    
+
     private void toggleAngleMode() {
         isDegreeMode = !isDegreeMode;
         JOptionPane.showMessageDialog(mainFrame, "Chế độ góc: " + (isDegreeMode ? "Độ" : "Radian"));
@@ -247,7 +246,7 @@ public class MySimpleCalculator {
             appendToDisplay("!");  // Thêm dấu "!" cho phép tính giai thừa
         } else if (label.equals("Deg↔Rad")) {
             toggleAngleMode();  // Chuyển đổi giữa độ và radian
-        }  else {
+        } else {
             appendToDisplay(label);  // Thêm các nhãn của các nút khác vào màn hình
         }
     }
@@ -311,6 +310,16 @@ public class MySimpleCalculator {
 
         // Đảm bảo cursorPos không vượt quá độ dài chuỗi
         cursorPos = Math.min(cursorPos, currentText.length());
+
+
+        // Add a check for the maximum length
+        if (currentText.length() + text.length() > 40) {
+            JOptionPane.showMessageDialog(mainFrame,
+                    "Nội dung nhập vượt quá độ dài tối đa cho phép là 40 ký tự!",
+                    "Vượt quá giới hạn đầu vào",
+                    JOptionPane.WARNING_MESSAGE);
+            return; // Exit without updating the display
+        }
 
         if (currentText.equals("0")) {
             displayField.setText(text);
@@ -446,7 +455,7 @@ public class MySimpleCalculator {
             displayField.requestFocusInWindow();
         });
     }
-    
+
     private void moveCaretRight() {
         int pos = displayField.getCaretPosition();
         if (pos < displayField.getText().length()) {
@@ -454,7 +463,7 @@ public class MySimpleCalculator {
             displayField.setCaretPosition(pos + 1);
         }
     }
-    
+
     private void clearCurrentEntry() {
         String text = displayField.getText();
         int pos = displayField.getCaretPosition();
@@ -474,6 +483,7 @@ public class MySimpleCalculator {
         displayField.setCaretPosition(Math.min(left + 1, newText.length()));
         displayField.requestFocusInWindow();
     }
+
     private void toggleSign() {
         String currentText = displayField.getText();
         if (currentText.equals("0") || currentText.isEmpty()) {
@@ -484,7 +494,7 @@ public class MySimpleCalculator {
             displayField.setText("-" + currentText);
         }
     }
-    
+
 
     /**
      * Thực hiện phép tính bằng cách đọc biểu thức từ màn hình, đánh giá nó, sau
@@ -496,7 +506,25 @@ public class MySimpleCalculator {
             if (expression.isEmpty()) {
                 return;
             }
+            // Validate the expression
+            if (!isValidExpression(expression)) {
+                throw new RuntimeException("Chứa các ký tự không hợp lệ");
+            }
             double result = evaluateExpression(expression); // Đánh giá biểu thức bằng bộ phân tích cú pháp
+            // Check if the result is too large or too small
+            if (result > Double.MAX_VALUE) {
+                JOptionPane.showMessageDialog(mainFrame,
+                        "Kết quả quá lớn để hiển thị!",
+                        "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            } else if (result < -Double.MAX_VALUE) {
+                JOptionPane.showMessageDialog(mainFrame,
+                        "Kết quả quá nhỏ để hiển thị!",
+                        "Cảnh báo",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             String resultStr = formatResult(result);        // Định dạng kết quả để hiển thị
             String historyLine = expression + " = " + resultStr;
             historyModel.addElement(historyLine); // Thêm phép tính vào lịch sử (bộ nhớ)
@@ -525,6 +553,11 @@ public class MySimpleCalculator {
         }
     }
 
+    private boolean isValidExpression(String expression) {
+        // Kiểm tra biểu thức chỉ chứa các ký tự hợp lệ
+        return expression.matches("[0-9+\\-*/().^√%!sin|cos|tan|cot|log|ln]*");
+    }
+
     /**
      * Đánh giá một biểu thức toán học bằng bộ phân tích cú pháp giảm đệ quy.
      *
@@ -550,7 +583,7 @@ public class MySimpleCalculator {
             return String.valueOf(value);
         }
     }
-    
+
 
     /**
      * ExpressionParser sử dụng phân tích cú pháp giảm đệ quy để đánh giá các
@@ -669,7 +702,7 @@ public class MySimpleCalculator {
             double result;
             int startPos = pos; // Ghi nhớ vị trí bắt đầu cho các số
 
-         // Hàm lượng giác & logarit
+            // Hàm lượng giác & logarit
             String func = null;
             if (Character.isLetter(currentChar)) {
                 int startFunc = pos;
@@ -689,10 +722,22 @@ public class MySimpleCalculator {
                 switch (func) {
                     case "sin" -> result = Math.sin(arg);
                     case "cos" -> result = Math.cos(arg);
-                    case "tan" -> result = Math.tan(arg);
-                    case "cot" -> result = 1.0 / Math.tan(arg);
-                    case "log" -> result = Math.log10(arg);
-                    case "ln" -> result = Math.log(arg);
+                    case "tan" -> {
+                        if (Math.cos(arg) == 0) throw new ArithmeticException("Giá trị không xác định cho tan!");
+                        result = Math.tan(arg);
+                    }
+                    case "cot" -> {
+                        if (Math.sin(arg) == 0) throw new ArithmeticException("Giá trị không xác định cho cot!");
+                        result = 1.0 / Math.tan(arg);
+                    }
+                    case "log" -> {
+                        if (arg <= 0) throw new ArithmeticException("Log chỉ áp dụng cho số dương!");
+                        result = Math.log10(arg);
+                    }
+                    case "ln" -> {
+                        if (arg <= 0) throw new ArithmeticException("Ln chỉ áp dụng cho số dương!");
+                        result = Math.log(arg);
+                    }
                     default -> throw new RuntimeException("Unknown function: " + func);
                 }
                 return result;
@@ -757,6 +802,7 @@ public class MySimpleCalculator {
             }
             return result;
         }
+
         private double factorial(int n) {
             double res = 1;
             for (int i = 2; i <= n; i++) res *= i;
@@ -789,113 +835,116 @@ public class MySimpleCalculator {
             return this;
         }
     }
+
     private JMenuBar createMenuBar() {
-    JMenuBar menuBar = new JMenuBar();
+        JMenuBar menuBar = new JMenuBar();
 
-    JMenu themeMenu = new JMenu("Giao diện");
+        JMenu themeMenu = new JMenu("Giao diện");
 
-    // Create menu items
-    JMenuItem lightModeItem = new JMenuItem("Chế độ Sáng", UIManager.getIcon("FileView.directoryIcon"));
-    JMenuItem darkModeItem = new JMenuItem("Chế độ Tối", UIManager.getIcon("FileView.fileIcon"));
-    JMenuItem fontItem = new JMenuItem("Chọn Phông Chữ", UIManager.getIcon("FileChooser.detailsViewIcon"));
-    JMenuItem bgColorItem = new JMenuItem("Màu nền", UIManager.getIcon("OptionPane.informationIcon"));
-    JMenuItem fgColorItem = new JMenuItem("Màu chữ", UIManager.getIcon("OptionPane.questionIcon"));
+        // Create menu items
+        JMenuItem lightModeItem = new JMenuItem("Chế độ Sáng", UIManager.getIcon("FileView.directoryIcon"));
+        JMenuItem darkModeItem = new JMenuItem("Chế độ Tối", UIManager.getIcon("FileView.fileIcon"));
+        JMenuItem fontItem = new JMenuItem("Chọn Phông Chữ", UIManager.getIcon("FileChooser.detailsViewIcon"));
+        JMenuItem bgColorItem = new JMenuItem("Màu nền", UIManager.getIcon("OptionPane.informationIcon"));
+        JMenuItem fgColorItem = new JMenuItem("Màu chữ", UIManager.getIcon("OptionPane.questionIcon"));
 
-    // Add actions
-    lightModeItem.addActionListener(e -> setThemeMode("LIGHT"));
-    darkModeItem.addActionListener(e -> setThemeMode("DARK"));
-    fontItem.addActionListener(e -> chooseFont());
-    bgColorItem.addActionListener(e -> chooseBackgroundColor());
-    fgColorItem.addActionListener(e -> chooseForegroundColor());
+        // Add actions
+        lightModeItem.addActionListener(e -> setThemeMode("LIGHT"));
+        darkModeItem.addActionListener(e -> setThemeMode("DARK"));
+        fontItem.addActionListener(e -> chooseFont());
+        bgColorItem.addActionListener(e -> chooseBackgroundColor());
+        fgColorItem.addActionListener(e -> chooseForegroundColor());
 
-    // Add menu items to menu
-    themeMenu.add(lightModeItem);
-    themeMenu.add(darkModeItem);
-    themeMenu.addSeparator();
-    themeMenu.add(fontItem);
-    themeMenu.add(bgColorItem);
-    themeMenu.add(fgColorItem);
+        // Add menu items to menu
+        themeMenu.add(lightModeItem);
+        themeMenu.add(darkModeItem);
+        themeMenu.addSeparator();
+        themeMenu.add(fontItem);
+        themeMenu.add(bgColorItem);
+        themeMenu.add(fgColorItem);
 
-    // Add menu to menu bar
-    menuBar.add(themeMenu);
+        // Add menu to menu bar
+        menuBar.add(themeMenu);
 
-    return menuBar;
-}
-
-private void setThemeMode(String mode) {
-    Color bgColor, fgColor, btnColor;
-
-    if (mode.equals("DARK")) {
-        bgColor = new Color(40, 40, 40);
-        fgColor = Color.WHITE;
-        btnColor = new Color(70, 70, 70);
-    } else {
-        bgColor = Color.WHITE;
-        fgColor = Color.BLACK;
-        btnColor = new Color(230, 230, 230);
+        return menuBar;
     }
 
-    displayField.setBackground(bgColor);
-    displayField.setForeground(fgColor);
-    historyList.setBackground(bgColor);
-    historyList.setForeground(fgColor);
+    private void setThemeMode(String mode) {
+        Color bgColor, fgColor, btnColor;
 
-    Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents(); // buttonPanel
-    for (Component c : components) {
-        if (c instanceof JButton) {
-            JButton btn = (JButton) c;
-            btn.setBackground(btnColor);
-            btn.setForeground(fgColor);
+        if (mode.equals("DARK")) {
+            bgColor = new Color(40, 40, 40);
+            fgColor = Color.WHITE;
+            btnColor = new Color(70, 70, 70);
+        } else {
+            bgColor = Color.WHITE;
+            fgColor = Color.BLACK;
+            btnColor = new Color(230, 230, 230);
         }
-    }
 
-    mainFrame.getContentPane().setBackground(bgColor);
-}
-private void chooseFont() {
-    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-    String[] fonts = ge.getAvailableFontFamilyNames();
+        displayField.setBackground(bgColor);
+        displayField.setForeground(fgColor);
+        historyList.setBackground(bgColor);
+        historyList.setForeground(fgColor);
 
-    String selectedFontName = (String) JOptionPane.showInputDialog(
-        mainFrame,
-        "Chọn Phông Chữ:",
-        "Chọn Phông Chữ",
-        JOptionPane.PLAIN_MESSAGE,
-        null,
-        fonts,
-        displayField.getFont().getFamily()
-    );
-
-    if (selectedFontName != null) {
-        Font selectedFont = new Font(selectedFontName, Font.PLAIN, 16);
-        displayField.setFont(selectedFont);
-        historyList.setFont(selectedFont.deriveFont(14f));
-
-        Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents();
+        Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents(); // buttonPanel
         for (Component c : components) {
             if (c instanceof JButton) {
-                ((JButton) c).setFont(selectedFont.deriveFont(16f));
+                JButton btn = (JButton) c;
+                btn.setBackground(btnColor);
+                btn.setForeground(fgColor);
+            }
+        }
+
+        mainFrame.getContentPane().setBackground(bgColor);
+    }
+
+    private void chooseFont() {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        String[] fonts = ge.getAvailableFontFamilyNames();
+
+        String selectedFontName = (String) JOptionPane.showInputDialog(
+                mainFrame,
+                "Chọn Phông Chữ:",
+                "Chọn Phông Chữ",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                fonts,
+                displayField.getFont().getFamily()
+        );
+
+        if (selectedFontName != null) {
+            Font selectedFont = new Font(selectedFontName, Font.PLAIN, 16);
+            displayField.setFont(selectedFont);
+            historyList.setFont(selectedFont.deriveFont(14f));
+
+            Component[] components = ((JPanel) mainFrame.getContentPane().getComponent(1)).getComponents();
+            for (Component c : components) {
+                if (c instanceof JButton) {
+                    ((JButton) c).setFont(selectedFont.deriveFont(16f));
+                }
             }
         }
     }
-}
-private void chooseBackgroundColor() {
-    Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Nền", displayField.getBackground());
-    if (color != null) {
-        displayField.setBackground(color);
-        historyList.setBackground(color);
-        mainFrame.getContentPane().setBackground(color);
-    }
-}
 
-private void chooseForegroundColor() {
-    Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Chữ", displayField.getForeground());
-    if (color != null) {
-        displayField.setForeground(color);
-        historyList.setForeground(color);
+    private void chooseBackgroundColor() {
+        Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Nền", displayField.getBackground());
+        if (color != null) {
+            displayField.setBackground(color);
+            historyList.setBackground(color);
+            mainFrame.getContentPane().setBackground(color);
+        }
     }
-}
 
-    
+    private void chooseForegroundColor() {
+        Color color = JColorChooser.showDialog(mainFrame, "Chọn Màu Chữ", displayField.getForeground());
+        if (color != null) {
+            displayField.setForeground(color);
+            historyList.setForeground(color);
+        }
+    }
+
+
     public static void main(String[] args) {
         MySimpleCalculator c = new MySimpleCalculator();
     }
